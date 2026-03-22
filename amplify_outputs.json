@@ -1,0 +1,281 @@
+{
+  "data": {
+    "url": "https://pqt7gbtx5vejdphzonk65k3ehm.appsync-api.us-east-2.amazonaws.com/graphql",
+    "aws_region": "us-east-2",
+    "api_key": "da2-vygcograrvdkje7dvsu2wct674",
+    "default_authorization_type": "API_KEY",
+    "authorization_types": [
+      "AWS_IAM"
+    ],
+    "model_introspection": {
+      "version": 1,
+      "models": {},
+      "enums": {},
+      "nonModels": {
+        "NewsArticle": {
+          "name": "NewsArticle",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "ticker": {
+              "name": "ticker",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "headline": {
+              "name": "headline",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "summary": {
+              "name": "summary",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "publishedDate": {
+              "name": "publishedDate",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "source": {
+              "name": "source",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "url": {
+              "name": "url",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "importance": {
+              "name": "importance",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "category": {
+              "name": "category",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "Security": {
+          "name": "Security",
+          "fields": {
+            "ticker": {
+              "name": "ticker",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "companyName": {
+              "name": "companyName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "sector": {
+              "name": "sector",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "industry": {
+              "name": "industry",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "exchange": {
+              "name": "exchange",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "earningsDate": {
+              "name": "earningsDate",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "exDivDate": {
+              "name": "exDivDate",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "exDivAmount": {
+              "name": "exDivAmount",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "shortInterest": {
+              "name": "shortInterest",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "shortRatio": {
+              "name": "shortRatio",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "primaryExchange": {
+              "name": "primaryExchange",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "avgDailyVolume": {
+              "name": "avgDailyVolume",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "cusip": {
+              "name": "cusip",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "isin": {
+              "name": "isin",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "indexes": {
+              "name": "indexes",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "TickerNewsData": {
+          "name": "TickerNewsData",
+          "fields": {
+            "security": {
+              "name": "security",
+              "isArray": false,
+              "type": {
+                "nonModel": "Security"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "newsArticles": {
+              "name": "newsArticles",
+              "isArray": true,
+              "type": {
+                "nonModel": "NewsArticle"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            }
+          }
+        },
+        "RelatedCompany": {
+          "name": "RelatedCompany",
+          "fields": {
+            "ticker": {
+              "name": "ticker",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "companyName": {
+              "name": "companyName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "queries": {
+        "getTickerNews": {
+          "name": "getTickerNews",
+          "isArray": false,
+          "type": {
+            "nonModel": "TickerNewsData"
+          },
+          "isRequired": false,
+          "arguments": {
+            "ticker": {
+              "name": "ticker",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "limit": {
+              "name": "limit",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false
+            }
+          }
+        },
+        "getCompaniesByIndustry": {
+          "name": "getCompaniesByIndustry",
+          "isArray": true,
+          "type": {
+            "nonModel": "RelatedCompany"
+          },
+          "isRequired": false,
+          "isArrayNullable": true,
+          "arguments": {
+            "industry": {
+              "name": "industry",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "version": "1.4"
+}
