@@ -291,9 +291,9 @@ const mysql = require('mysql2/promise');
 (async () => {
   const conn = await mysql.createConnection({
     host: 'your-host',
-    user: 'admin',
+    user: 'your-user',
     password: 'your-password',
-    database: 'in4mdatabase'
+    database: 'database'
   });
   const [rows] = await conn.execute('SELECT COUNT(*) as count FROM news');
   console.log('News count:', rows[0].count);
