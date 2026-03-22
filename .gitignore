@@ -24,9 +24,7 @@ dist-ssr
 *.sw?
 
 # Amplify
-amplify_outputs.json
 .amplify
-amplify-outputs.json
 
 # Environment variables
 .env
