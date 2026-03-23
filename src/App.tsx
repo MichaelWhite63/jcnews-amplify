@@ -176,11 +176,6 @@ function App() {
     })
   }
 
-  const extractExchange = (exchangeString: string) => {
-    // Extract the part before the colon (e.g., "NASDAQ:AAPL" -> "NASDAQ")
-    return exchangeString.split(':')[0]
-  }
-
   if (loading) {
     return (
       <div className="container">
