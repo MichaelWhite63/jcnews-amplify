@@ -25,6 +25,7 @@ dist-ssr
 
 # Amplify
 .amplify
+amplify/amplify_outputs.json
 
 # Environment variables
 .env
