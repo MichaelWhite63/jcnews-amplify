@@ -67,6 +67,20 @@
   transform: scale(0.97);
 }
 
+.theme-toggle {
+  padding: 0.6rem 0.75rem !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-secondary) !important;
+  border: 1.5px solid var(--border) !important;
+  font-size: 1rem !important;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  background-color: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
 /* ── Search History ─────────────────────────────────── */
 .search-history {
   display: flex;
@@ -123,16 +137,20 @@
   padding: 0.75rem 1rem;
   text-align: left;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-primary);
 }
 
 .news-table tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background-color 0.15s;
   cursor: pointer;
+}
+
+.news-table tbody tr:nth-child(even) {
+  background-color: var(--bg-secondary);
 }
 
 .news-table tbody tr:last-child {
@@ -146,6 +164,11 @@
 .news-table td {
   padding: 0.875rem 1rem;
   vertical-align: middle;
+  border-right: 1px solid var(--border);
+}
+
+.news-table td:last-child {
+  border-right: none;
 }
 
 .summary-cell {
@@ -413,6 +436,85 @@
 
 .error button:hover {
   background-color: var(--accent-hover);
+}
+
+/* ── Oil Button & Dashboard ─────────────────────────── */
+.oil-btn-container {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.oil-btn {
+  width: 100%;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.oil-btn:hover {
+  border-color: #EF9F27;
+  color: #EF9F27;
+  background-color: rgba(239, 159, 39, 0.08);
+}
+
+.oil-btn.active {
+  border-color: #EF9F27;
+  color: #EF9F27;
+  background-color: rgba(239, 159, 39, 0.12);
+}
+
+.oil-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+}
+
+.oil-modal {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.oil-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.oil-modal-close:hover {
+  background: rgba(0, 0, 0, 0.45);
 }
 
 /* ── Responsive ─────────────────────────────────────── */

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../amplify/data/resource'
+import GeopoliticalRiskDashboard from './components/GeopoliticalRiskDashboard'
 import './App.css'
 
 interface NewsArticle {
@@ -45,16 +46,43 @@ interface RelatedCompany {
 
 function App() {
   const client = generateClient<Schema>()
+  const initialTicker = new URLSearchParams(window.location.search).get('ticker') || 'AAPL US'
   const [data, setData] = useState<TickerNewsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [ticker, setTicker] = useState('AAPL US')
-  const [searchTicker, setSearchTicker] = useState('AAPL US')
+  const [ticker, setTicker] = useState(initialTicker)
+  const [searchTicker, setSearchTicker] = useState(initialTicker)
   const [relatedCompanies, setRelatedCompanies] = useState<RelatedCompany[]>([])
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
+  const [showOilDashboard, setShowOilDashboard] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const industryButtonRef = useRef<HTMLButtonElement>(null)
+  const articleWindowRef = useRef<Window | null>(null)
+  const articleCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openArticle = (url: string) => {
+    if (articleCloseTimerRef.current) {
+      clearTimeout(articleCloseTimerRef.current)
+    }
+    articleWindowRef.current = window.open(url, 'jcnews-article')
+    if (articleWindowRef.current) {
+      articleCloseTimerRef.current = setTimeout(() => {
+        try { articleWindowRef.current?.close() } catch { /* blocked */ }
+      }, 30000)
+    }
+  }
   const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    if (saved !== null) return saved === 'true'
+    return !window.matchMedia('(prefers-color-scheme: light)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', !darkMode)
+    document.documentElement.classList.toggle('dark', darkMode)
+    localStorage.setItem('darkMode', String(darkMode))
+  }, [darkMode])
 
   useEffect(() => {
     // Load search history from localStorage
@@ -223,6 +251,9 @@ function App() {
               setSearchTicker(processedTicker)
               fetchTickerNews(processedTicker)
             }}>Search</button>
+            <button className="theme-toggle" onClick={() => setDarkMode(d => !d)} title="Toggle dark mode">
+              {darkMode ? '☀' : '☾'}
+            </button>
 
             {searchHistory.length > 0 && (
               <div className="search-history">
@@ -254,19 +285,18 @@ function App() {
                     <tr
                       key={article.id}
                       title={`${article.headline}\n${article.source} - ${formatDate(article.publishedDate)}`}
-                      onClick={() => article.url && window.open(article.url, '_blank')}
+                      onClick={() => article.url && openArticle(article.url)}
                       style={{ cursor: article.url ? 'pointer' : 'default' }}
                     >
                       <td className="summary-cell">{article.summary}</td>
                       <td className="category-cell">{article.category ? article.category.substring(0, 4) : '-'}</td>
                       <td className="importance-cell">
-                        {article.importance ? (
-                          <span className={`importance-badge ${
-                            Number(article.importance) >= 8 ? 'importance-high' :
-                            Number(article.importance) >= 5 ? 'importance-mid' :
-                            'importance-low'
-                          }`}>{article.importance}</span>
-                        ) : '-'}
+                        {article.importance ? (() => {
+                          const n = Number(article.importance)
+                          const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
+                          const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
+                          return <span className={`importance-badge ${cls}`}>{label}</span>
+                        })() : '-'}
                       </td>
                     </tr>
                   ))}
@@ -406,8 +436,25 @@ function App() {
           ) : (
             <p>No security information available</p>
           )}
+          <div className="oil-btn-container">
+            <button
+              className={`oil-btn${showOilDashboard ? ' active' : ''}`}
+              onClick={() => setShowOilDashboard(v => !v)}
+            >
+              Oil
+            </button>
+          </div>
         </aside>
       </div>
+
+      {showOilDashboard && (
+        <div className="oil-modal-backdrop" onClick={() => setShowOilDashboard(false)}>
+          <div className="oil-modal" onClick={e => e.stopPropagation()}>
+            <button className="oil-modal-close" onClick={() => setShowOilDashboard(false)}>✕</button>
+            <GeopoliticalRiskDashboard />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
