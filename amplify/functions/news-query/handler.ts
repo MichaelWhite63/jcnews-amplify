@@ -1,12 +1,11 @@
 import type { Schema } from '../../data/resource';
 import mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
 type TickerNewsHandler = Schema['getTickerNews']['functionHandler'];
 type IndustryHandler = Schema['getCompaniesByIndustry']['functionHandler'];
 
-// Define interfaces for database rows
 interface SecurityRow extends RowDataPacket {
   ticker: string;
   companyName: string;
@@ -25,33 +24,24 @@ interface NewsRow extends RowDataPacket {
   url: string | null;
 }
 
-const PLACEHOLDER = '<value will be resolved during runtime>';
-const ssmClient = new SSMClient({});
+const secretsClient = new SecretsManagerClient({ region: 'us-east-2' });
+let secretsResolved = false;
 
-async function resolveAmplifySecrets(): Promise<void> {
-  if (process.env.DB_HOST !== PLACEHOLDER) return;
-  const configStr = process.env.AMPLIFY_SSM_ENV_CONFIG;
-  if (!configStr) return;
-
-  const config: Record<string, { path: string; sharedPath: string }> = JSON.parse(configStr);
-  await Promise.all(
-    Object.entries(config).map(async ([envKey, paths]) => {
-      for (const name of [paths.path, paths.sharedPath]) {
-        try {
-          const result = await ssmClient.send(new GetParameterCommand({ Name: name, WithDecryption: true }));
-          if (result.Parameter?.Value) {
-            process.env[envKey] = result.Parameter.Value;
-            return;
-          }
-        } catch { /* try next path */ }
-      }
-      console.warn(`Could not resolve secret for ${envKey}`);
-    })
-  );
+async function resolveDBCredentials(): Promise<void> {
+  if (secretsResolved) return;
+  const secretName = process.env.SECRET_NAME || 'in4m/rds/credentials';
+  const response = await secretsClient.send(new GetSecretValueCommand({ SecretId: secretName }));
+  const secret = JSON.parse(response.SecretString || '{}');
+  process.env.DB_HOST     = secret.host;
+  process.env.DB_PORT     = secret.port?.toString() || '3306';
+  process.env.SQL_DATABASE = secret.dbname;
+  process.env.SQL_USER    = secret.username;
+  process.env.SQL_PASSWORD = secret.password;
+  secretsResolved = true;
 }
 
 export const handler = async (event: any) => {
-  await resolveAmplifySecrets();
+  await resolveDBCredentials();
 
   console.log('ENV CHECK:', {
     DB_HOST:      process.env.DB_HOST      || '*** NOT SET ***',
