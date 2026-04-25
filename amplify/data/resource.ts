@@ -7,6 +7,7 @@ const schema = a.schema({
     ticker: a.string(),
     headline: a.string(),
     summary: a.string(),
+    article: a.string(),
     publishedDate: a.datetime(),
     source: a.string(),
     url: a.string(),

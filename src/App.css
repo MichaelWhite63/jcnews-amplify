@@ -1,6 +1,9 @@
 /* ── Layout ─────────────────────────────────────────── */
 .container {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .split-container {
@@ -14,15 +17,14 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 /* ── Search Bar ─────────────────────────────────────── */
 .ticker-selector {
   display: flex;
   gap: 0.5rem;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 .ticker-selector input {
@@ -83,10 +85,8 @@
 
 /* ── Search History ─────────────────────────────────── */
 .search-history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  align-items: center;
+  display: contents;
+
   width: 100%;
 }
 
@@ -116,11 +116,16 @@
 }
 
 /* ── News Table ─────────────────────────────────────── */
-.news-table {
+.news-table-scroll {
+  overflow-y: auto;
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background-color: var(--bg-card);
+}
+
+.news-table {
+  min-width: 100%;
 }
 
 .news-table table {
@@ -131,6 +136,9 @@
 .news-table thead {
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .news-table th {
@@ -141,6 +149,26 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-primary);
+}
+
+.th-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.th-filter select {
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 0.15rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .news-table tbody tr {
@@ -171,10 +199,103 @@
   border-right: none;
 }
 
-.summary-cell {
-  color: var(--text-secondary);
+.trade-date-separator td {
+  padding: 4px 12px;
+  background: transparent;
+  border-right: none !important;
+  border-bottom: 2px solid var(--accent);
+  border-top: 2px solid var(--accent);
+}
+
+.trade-date-separator span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.headline-cell {
+  color: var(--text-primary);
   font-size: 0.875rem;
-  line-height: 1.55;
+  line-height: 1.45;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.article-row.expanded {
+  background-color: var(--accent-dim) !important;
+}
+
+.article-row.expanded .headline-cell {
+  color: var(--accent-hover);
+}
+
+.accordion-chevron {
+  display: inline-block;
+  width: 2.5rem;
+  font-size: 2.2rem;
+  color: var(--accent);
+  margin-right: 0.35rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.accordion-detail-row td {
+  padding: 0;
+  border-top: none;
+}
+
+.accordion-detail {
+  padding: 1rem 1.25rem 1.25rem 2.5rem;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.accordion-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.accordion-detail-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.article-summary-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.accordion-detail-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.article-summary-link {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  font-weight: 600;
+  background-color: var(--accent-dim);
+  color: var(--accent-hover);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.article-summary-link:hover {
+  background-color: rgba(99, 102, 241, 0.2);
 }
 
 .category-cell {
@@ -182,9 +303,33 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  text-align: center;
   color: var(--text-muted);
   width: 7%;
   white-space: nowrap;
+}
+
+.id-cell {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 4%;
+  text-align: right;
+}
+
+.chars-cell {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 5%;
+  text-align: right;
+}
+
+.date-cell {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 12%;
 }
 
 .importance-cell {
@@ -218,14 +363,23 @@
   color: var(--accent-hover);
 }
 
+/* ── Right Column ───────────────────────────────────── */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 300px;
+  flex-shrink: 0;
+}
+
 /* ── Security Panel ─────────────────────────────────── */
 .security-panel {
-  width: 300px;
+  width: 100%;
   flex-shrink: 0;
   background-color: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
   position: sticky;
   top: 1.5rem;
   height: fit-content;
@@ -250,7 +404,7 @@
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
+  padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);
   line-height: 1.3;
 }
@@ -440,9 +594,45 @@
 
 /* ── Oil Button & Dashboard ─────────────────────────── */
 .oil-btn-container {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.english-search-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.english-search-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.english-search-textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  box-sizing: border-box;
+  line-height: 1.5;
+  transition: border-color 0.2s;
+}
+
+.english-search-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background-color: var(--bg-hover);
 }
 
 .oil-btn {
@@ -523,8 +713,11 @@
     flex-direction: column;
   }
 
-  .security-panel {
+  .right-column {
     width: 100%;
+  }
+
+  .security-panel {
     position: static;
     max-height: none;
   }

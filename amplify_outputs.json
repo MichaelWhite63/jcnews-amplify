@@ -43,6 +43,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "article": {
+              "name": "article",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "publishedDate": {
               "name": "publishedDate",
               "isArray": false,

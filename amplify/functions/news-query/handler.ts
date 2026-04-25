@@ -1,6 +1,7 @@
 import type { Schema } from '../../data/resource';
 import mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
 type TickerNewsHandler = Schema['getTickerNews']['functionHandler'];
 type IndustryHandler = Schema['getCompaniesByIndustry']['functionHandler'];
@@ -24,26 +25,60 @@ interface NewsRow extends RowDataPacket {
   url: string | null;
 }
 
-// Database configuration from environment variables
-const dbConfig = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.SQL_USER,
-  password: process.env.SQL_PASSWORD,
-  database: process.env.SQL_DATABASE,
-  connectTimeout: 10000,
-};
+const PLACEHOLDER = '<value will be resolved during runtime>';
+const ssmClient = new SSMClient({});
+
+async function resolveAmplifySecrets(): Promise<void> {
+  if (process.env.DB_HOST !== PLACEHOLDER) return;
+  const configStr = process.env.AMPLIFY_SSM_ENV_CONFIG;
+  if (!configStr) return;
+
+  const config: Record<string, { path: string; sharedPath: string }> = JSON.parse(configStr);
+  await Promise.all(
+    Object.entries(config).map(async ([envKey, paths]) => {
+      for (const name of [paths.path, paths.sharedPath]) {
+        try {
+          const result = await ssmClient.send(new GetParameterCommand({ Name: name, WithDecryption: true }));
+          if (result.Parameter?.Value) {
+            process.env[envKey] = result.Parameter.Value;
+            return;
+          }
+        } catch { /* try next path */ }
+      }
+      console.warn(`Could not resolve secret for ${envKey}`);
+    })
+  );
+}
 
 export const handler = async (event: any) => {
+  await resolveAmplifySecrets();
+
+  console.log('ENV CHECK:', {
+    DB_HOST:      process.env.DB_HOST      || '*** NOT SET ***',
+    DB_PORT:      process.env.DB_PORT      || '*** NOT SET ***',
+    SQL_DATABASE: process.env.SQL_DATABASE || '*** NOT SET ***',
+    SQL_USER:     process.env.SQL_USER     || '*** NOT SET ***',
+    SQL_PASSWORD: process.env.SQL_PASSWORD ? '*** SET ***' : '*** NOT SET ***',
+  });
+
+  const dbConfig = {
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.SQL_USER,
+    password: process.env.SQL_PASSWORD,
+    database: process.env.SQL_DATABASE,
+    connectTimeout: 10000,
+  };
+
   // Route to appropriate handler based on arguments
   if ('industry' in event.arguments) {
-    return handleGetCompaniesByIndustry(event);
+    return handleGetCompaniesByIndustry(event, dbConfig);
   } else {
-    return handleGetTickerNews(event);
+    return handleGetTickerNews(event, dbConfig);
   }
 };
 
-const handleGetTickerNews = async (event: any) => {
+const handleGetTickerNews = async (event: any, dbConfig: object) => {
   const { ticker, limit = 10 } = event.arguments;
   console.log('Fetching news for ticker:', ticker, 'with limit:', limit);
 
@@ -67,17 +102,30 @@ const handleGetTickerNews = async (event: any) => {
 
     const securityRow = securityRows.length > 0 ? securityRows[0] : null;
 
-    // Query for news articles with importance and category
-    // Note: MySQL doesn't support placeholders for LIMIT in prepared statements with execute()
-    // So we validate the limit and use string interpolation safely
-    const safeLimit = Math.min(Math.max(parseInt(String(limit || 10)), 1), 100);
+    // Calculate cutoff: go back 2 business days (skip weekends)
+    const now = new Date();
+    let daysBack = 0;
+    let businessDaysBack = 0;
+    while (businessDaysBack < 2) {
+      daysBack++;
+      const d = new Date(now);
+      d.setDate(now.getDate() - daysBack);
+      const dow = d.getDay(); // 0=Sun, 6=Sat
+      if (dow !== 0 && dow !== 6) businessDaysBack++;
+    }
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - daysBack);
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = cutoff.toISOString().slice(0, 19).replace('T', ' ');
+    console.log(`Cutoff date for query: ${cutoffStr}`);
+
     const [newsRows] = await connection.query<any[]>(
-      `SELECT id, ticker, title, summary, articleURL, source, createdAt, importance, category
+      `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
        FROM news
        WHERE ticker = ?
-       ORDER BY createdAt DESC
-       LIMIT ${safeLimit}`,
-      [ticker]
+         AND createdAt >= ?
+       ORDER BY createdAt DESC`,
+      [ticker, cutoffStr]
     );
 
     return {
@@ -103,6 +151,7 @@ const handleGetTickerNews = async (event: any) => {
         ticker: article.ticker || '',
         headline: article.title || '',
         summary: article.summary || '',
+        article: article.article || '',
         publishedDate: article.createdAt ? new Date(article.createdAt).toISOString() : new Date().toISOString(),
         source: article.source || '',
         url: article.articleURL || '',
@@ -121,7 +170,7 @@ const handleGetTickerNews = async (event: any) => {
   }
 };
 
-const handleGetCompaniesByIndustry = async (event: any) => {
+const handleGetCompaniesByIndustry = async (event: any, dbConfig: object) => {
   const { industry } = event.arguments;
   console.log('Fetching companies for industry:', industry);
 
