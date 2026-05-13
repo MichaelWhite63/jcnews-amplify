@@ -56,7 +56,7 @@ function getPrevTradeDateCutoff(): Date {
 }
 
 function App() {
-  const client = generateClient<Schema>()
+  const client = generateClient<Schema>({ authMode: 'iam' })
   const initialTicker = new URLSearchParams(window.location.search).get('ticker') || 'AAPL US'
   const initialCountryCode = initialTicker.includes(' ') ? initialTicker.split(' ').pop()! : 'US'
   const [defaultCountryCode, setDefaultCountryCode] = useState(initialCountryCode)

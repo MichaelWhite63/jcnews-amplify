@@ -51,7 +51,7 @@ const schema = a.schema({
       limit: a.integer(),
     })
     .returns(a.ref('TickerNewsData'))
-    .authorization((allow) => [allow.publicApiKey()])
+    .authorization((allow) => [allow.guest()])
     .handler(
       a.handler.function(newsQuery)
     ),
@@ -62,7 +62,7 @@ const schema = a.schema({
       industry: a.string().required(),
     })
     .returns(a.ref('RelatedCompany').array())
-    .authorization((allow) => [allow.publicApiKey()])
+    .authorization((allow) => [allow.guest()])
     .handler(
       a.handler.function(newsQuery)
     ),
@@ -73,9 +73,6 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: 'apiKey',
-    apiKeyAuthorizationMode: {
-      expiresInDays: 365,
-    },
+    defaultAuthorizationMode: 'iam',
   },
 });
