@@ -1,8 +1,8 @@
 {
   "data": {
-    "url": "https://pqt7gbtx5vejdphzonk65k3ehm.appsync-api.us-east-2.amazonaws.com/graphql",
+    "url": "https://g54zkvq6ezftzlpwy4mojsbdju.appsync-api.us-east-2.amazonaws.com/graphql",
     "aws_region": "us-east-2",
-    "api_key": "da2-vygcograrvdkje7dvsu2wct674",
+    "api_key": "da2-xcpzq54rcrb4nbeuvxwzrtps6y",
     "default_authorization_type": "API_KEY",
     "authorization_types": [
       "AWS_IAM"
@@ -284,5 +284,5 @@
       }
     }
   },
-  "version": "1.4"
+  "version": "1.3"
 }
