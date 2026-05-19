@@ -26,7 +26,7 @@ DB_HOST=production-in4m-database.cnwkqkqik0k9.us-east-2.rds.amazonaws.com
 DB_PORT=3306
 SQL_DATABASE=in4mdatabase
 SQL_USER=admin
-SQL_PASSWORD=LetsGoIn4m
+SQL_PASSWORD=<your-database-password>
 DEV_OR_PROD=Production
 ```
 

@@ -2,6 +2,14 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../amplify/data/resource'
 import GeopoliticalRiskDashboard from './components/GeopoliticalRiskDashboard'
+import EIADashboard from './components/EIADashboard'
+import OilPanel from './components/OilPanel'
+import RatesPanel from './components/RatesPanel'
+import FxPanel from './components/FxPanel'
+import InflationPanel from './components/InflationPanel'
+import EmploymentPanel from './components/EmploymentPanel'
+import TradePanel from './components/TradePanel'
+import { oilNewsArticles, ratesNewsArticles, fxNewsArticles, inflationNewsArticles, employmentNewsArticles, tradeNewsArticles, type DowJonesArticle } from './data/dowJonesData'
 import './App.css'
 
 interface NewsArticle {
@@ -45,6 +53,15 @@ interface RelatedCompany {
   companyName: string
 }
 
+const VIEW_TO_SCREEN_KEY: Record<string, string> = {
+  oil_news:        'oil',
+  rates_news:      'rates',
+  fx_news:         'fx',
+  inflation_news:  'inflation',
+  employment_news: 'employment',
+  trade_news:      'trade',
+}
+
 function getPrevTradeDateCutoff(): Date {
   const now = new Date()
   const day = now.getDay() // 0=Sun,1=Mon,...,6=Sat
@@ -68,14 +85,22 @@ function App() {
   const [relatedCompanies, setRelatedCompanies] = useState<RelatedCompany[]>([])
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
   const [showOilDashboard, setShowOilDashboard] = useState(false)
+  const [showEIADashboard, setShowEIADashboard] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
+  const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
+  const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news'>('db')
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const [unreadScreens, setUnreadScreens] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('unreadScreens')
+    return saved ? JSON.parse(saved) : {}
+  })
   const industryButtonRef = useRef<HTMLButtonElement>(null)
   const tableScrollRef = useRef<HTMLDivElement>(null)
   const articleWindowRef = useRef<Window | null>(null)
   const articleCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activeScreenKeyRef = useRef<string>(initialTicker)
 
   const openArticle = (url: string) => {
     if (articleCloseTimerRef.current) {
@@ -88,7 +113,10 @@ function App() {
       }, 30000)
     }
   }
-  const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    const saved = localStorage.getItem('tickerSearchHistory')
+    return saved ? JSON.parse(saved) : []
+  })
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
     if (saved !== null) return saved === 'true'
@@ -100,6 +128,48 @@ function App() {
     document.documentElement.classList.toggle('dark', darkMode)
     localStorage.setItem('darkMode', String(darkMode))
   }, [darkMode])
+
+  useEffect(() => {
+    localStorage.setItem('unreadScreens', JSON.stringify(unreadScreens))
+  }, [unreadScreens])
+
+  useEffect(() => {
+    activeScreenKeyRef.current = activeView === 'db'
+      ? searchTicker
+      : (VIEW_TO_SCREEN_KEY[activeView] ?? activeView)
+  }, [activeView, searchTicker])
+
+  useEffect(() => {
+    let sub: any
+    try {
+      const observable = (client as any).subscriptions?.onNewArticle?.()
+      console.log('[sub] observable:', observable)
+      if (!observable) {
+        console.warn('[sub] onNewArticle not available on client.subscriptions')
+        return
+      }
+      sub = observable.subscribe({
+        next: (raw: any) => {
+          console.log('[sub] raw payload:', JSON.stringify(raw))
+          // Amplify Gen 2 custom subscriptions deliver data directly or wrapped
+          const article = raw?.data?.onNewArticle ?? raw?.onNewArticle ?? raw
+          console.log('[sub] article:', article)
+          if (!article || typeof article !== 'object') return
+          const key: string = article.screen || article.ticker
+          if (!key) return
+          console.log('[sub] key:', key, '| active:', activeScreenKeyRef.current)
+          if (key !== activeScreenKeyRef.current) {
+            setUnreadScreens(prev => ({ ...prev, [key]: true }))
+          }
+        },
+        error: (err: any) => console.error('[sub] error:', JSON.stringify(err, null, 2), err),
+      })
+      console.log('[sub] subscribed:', sub)
+    } catch (e) {
+      console.error('[sub] setup error:', e)
+    }
+    return () => sub?.unsubscribe?.()
+  }, [])
 
   useEffect(() => {
     document.title = `JC News - ${ticker}`
@@ -127,11 +197,6 @@ function App() {
   }, [])
 
   useEffect(() => {
-    // Load search history from localStorage
-    const saved = localStorage.getItem('tickerSearchHistory')
-    if (saved) {
-      setSearchHistory(JSON.parse(saved))
-    }
     fetchTickerNews()
   }, [])
 
@@ -143,6 +208,10 @@ function App() {
       return trimmed
     }
     return `${trimmed} ${defaultCountryCode}`
+  }
+
+  const clearUnread = (key: string) => {
+    setUnreadScreens(prev => prev[key] ? { ...prev, [key]: false } : prev)
   }
 
   const addToSearchHistory = (tickerValue: string) => {
@@ -157,8 +226,10 @@ function App() {
     setError(null)
     setShowIndustryDropdown(false)
     setSelectedArticle(null)
+    setActiveView('db')
     setImportanceFilter('All')
     setCategoryFilter('All')
+    clearUnread(tickerValue)
 
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
@@ -217,6 +288,7 @@ function App() {
   const selectFromHistory = (historicalTicker: string) => {
     setTicker(historicalTicker.split(' ')[0])
     setSearchTicker(historicalTicker)
+    clearUnread(historicalTicker)
     fetchTickerNews(historicalTicker)
   }
 
@@ -279,47 +351,135 @@ function App() {
 
   return (
     <div className="container">
-      <div className="ticker-selector">
-        <input
-          type="text"
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value.toUpperCase())}
-          onFocus={(e) => e.target.select()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              const processedTicker = processTicker(ticker)
-              setTicker(processedTicker.split(' ')[0])
-              setSearchTicker(processedTicker)
-              fetchTickerNews(processedTicker)
-            }
-          }}
-          placeholder="Enter ticker (e.g., AAPL)"
-        />
-        <button onClick={() => {
-          const processedTicker = processTicker(ticker)
-          setTicker(processedTicker.split(' ')[0])
-          setSearchTicker(processedTicker)
-          fetchTickerNews(processedTicker)
-        }}>Search</button>
-        <button className="theme-toggle" onClick={() => setDarkMode(d => !d)} title="Toggle dark mode">
-          {darkMode ? '☀' : '☾'}
-        </button>
-
-        {searchHistory.length > 0 && searchHistory.map((historyTicker, index) => (
-          <span
-            key={index}
-            className={`history-item ${historyTicker === searchTicker ? 'active' : ''}`}
-            onClick={() => selectFromHistory(historyTicker)}
-          >
-            {historyTicker}
-          </span>
-        ))}
-      </div>
+      {activeView === 'db' ? (
+        <div className="ticker-selector">
+          <input
+            type="text"
+            value={ticker}
+            onChange={(e) => setTicker(e.target.value.toUpperCase())}
+            onFocus={(e) => e.target.select()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const processedTicker = processTicker(ticker)
+                setTicker(processedTicker.split(' ')[0])
+                setSearchTicker(processedTicker)
+                fetchTickerNews(processedTicker)
+              }
+            }}
+            placeholder="Enter ticker (e.g., AAPL)"
+          />
+          <button onClick={() => {
+            const processedTicker = processTicker(ticker)
+            setTicker(processedTicker.split(' ')[0])
+            setSearchTicker(processedTicker)
+            fetchTickerNews(processedTicker)
+          }}>Search</button>
+          <button className="theme-toggle" onClick={() => setDarkMode(d => !d)} title="Toggle dark mode">
+            {darkMode ? '☀' : '☾'}
+          </button>
+          {searchHistory.length > 0 && searchHistory.map((historyTicker, index) => (
+            <span
+              key={index}
+              className={`history-item ${historyTicker === searchTicker ? 'active' : ''} ${unreadScreens[historyTicker] ? 'unread' : ''}`}
+              onClick={() => selectFromHistory(historyTicker)}
+            >
+              {historyTicker}
+              {unreadScreens[historyTicker] && <span className="unread-dot" />}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="dj-table-header">
+          <h2 className="dj-table-title">{activeView}</h2>
+          {activeView === 'oil_news' && (
+            <div className="dj-dashboard-buttons">
+              <button
+                className={`oil-btn${showOilDashboard ? ' active' : ''}`}
+                onClick={() => setShowOilDashboard(v => !v)}
+              >
+                Global oil supply risk dashboard
+              </button>
+              <button
+                className={`oil-btn${showEIADashboard ? ' active' : ''}`}
+                onClick={() => setShowEIADashboard(v => !v)}
+              >
+                EIA Weekly Dashboard
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="split-container">
         {/* Left Side - News Table */}
         <section className="news-table-section">
-          {data?.newsArticles && data.newsArticles.length > 0 ? (
+          {activeView !== 'db' ? (
+            <>
+            <div className="news-table-scroll">
+            <div className="news-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {({
+                    oil_news: oilNewsArticles,
+                    rates_news: ratesNewsArticles,
+                    fx_news: fxNewsArticles,
+                    inflation_news: inflationNewsArticles,
+                    employment_news: employmentNewsArticles,
+                    trade_news: tradeNewsArticles,
+                  }[activeView as string] ?? []).map((article: DowJonesArticle) => {
+                    const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
+                    return [
+                      <tr
+                        key={article.id}
+                        className={`article-row${isExpanded ? ' expanded' : ''}`}
+                        onClick={() => setSelectedDjArticle(prev =>
+                          prev?.id === article.id && prev?.source === article.source ? null : article
+                        )}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                        <td className="headline-cell">
+                          <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
+                          {article.headline}
+                        </td>
+                        <td className="category-cell">{article.source}</td>
+                      </tr>,
+                      isExpanded && (
+                        <tr key={`${article.id}-detail`} className="accordion-detail-row">
+                          <td colSpan={3}>
+                            <div className="accordion-detail">
+                              <div className="accordion-detail-header">
+                                <span className="article-summary-meta">
+                                  Dow Jones · {formatDate(article.publishedDate)}
+                                </span>
+                              </div>
+                              <div className="accordion-detail-text">
+                                {article.body
+                                  .replace(/\r\n|\r/g, '\n')
+                                  .split('\n')
+                                  .map((line, i) => (
+                                    <span key={i}>{line || ' '}<br /></span>
+                                  ))}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ),
+                    ]
+                  })}
+                </tbody>
+              </table>
+            </div>
+            </div>
+            </>
+          ) : data?.newsArticles && data.newsArticles.length > 0 ? (
             <div className="news-table-scroll" ref={tableScrollRef}>
             <div className="news-table">
               <table>
@@ -478,7 +638,13 @@ function App() {
 
         {/* Right Side - Security Panel + Oil Button */}
         <div className="right-column">
-        <aside className="security-panel">
+        {activeView === 'oil_news' ? <OilPanel /> :
+         activeView === 'rates_news' ? <RatesPanel /> :
+         activeView === 'fx_news' ? <FxPanel /> :
+         activeView === 'inflation_news' ? <InflationPanel /> :
+         activeView === 'employment_news' ? <EmploymentPanel /> :
+         activeView === 'trade_news' ? <TradePanel /> : null}
+        <aside className="security-panel" style={{ display: activeView === 'db' ? undefined : 'none' }}>
           {data?.security ? (
             <>
               <h2>{data.security.companyName}</h2>
@@ -574,13 +740,31 @@ function App() {
           )}
         </aside>
         <div className="oil-btn-container">
-          <button
-            className={`oil-btn${showOilDashboard ? ' active' : ''}`}
-            onClick={() => setShowOilDashboard(v => !v)}
-          >
-            Oil
-          </button>
-
+          {([
+            ['oil_news',        'oil',        'oil_news'],
+            ['rates_news',      'rates',      'rates_news'],
+            ['fx_news',         'fx',         'fx_news'],
+            ['inflation_news',  'inflation',  'inflation_news'],
+            ['employment_news', 'employment', 'employment_news'],
+            ['trade_news',      'trade',      'trade_news'],
+          ] as [string, string, string][]).map(([view, key, label]) => (
+            <button
+              key={view}
+              className={`oil-btn${activeView === view ? ' active' : ''}${unreadScreens[key] ? ' unread' : ''}`}
+              onClick={() => { clearUnread(key); setActiveView(v => v === view ? 'db' : view as any) }}
+            >
+              {label}
+              {unreadScreens[key] && <span className="unread-dot" />}
+            </button>
+          ))}
+          {activeView !== 'db' && (
+            <button
+              className="oil-btn"
+              onClick={() => setActiveView('db')}
+            >
+              {searchTicker} News
+            </button>
+          )}
         </div>
         </div>
       </div>
@@ -590,6 +774,14 @@ function App() {
           <div className="oil-modal" onClick={e => e.stopPropagation()}>
             <button className="oil-modal-close" onClick={() => setShowOilDashboard(false)}>✕</button>
             <GeopoliticalRiskDashboard />
+          </div>
+        </div>
+      )}
+      {showEIADashboard && (
+        <div className="oil-modal-backdrop" onClick={() => setShowEIADashboard(false)}>
+          <div className="oil-modal" onClick={e => e.stopPropagation()}>
+            <button className="oil-modal-close" onClick={() => setShowEIADashboard(false)}>✕</button>
+            <EIADashboard />
           </div>
         </div>
       )}

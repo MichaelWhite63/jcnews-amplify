@@ -41,6 +41,10 @@ async function resolveDBCredentials(): Promise<void> {
 }
 
 export const handler = async (event: any) => {
+  if (event.typeName === 'Subscription' || event.fieldName === 'onNewArticle') {
+    return null;
+  }
+
   await resolveDBCredentials();
 
   console.log('ENV CHECK:', {
@@ -63,9 +67,28 @@ export const handler = async (event: any) => {
   // Route to appropriate handler based on arguments
   if ('industry' in event.arguments) {
     return handleGetCompaniesByIndustry(event, dbConfig);
+  } else if ('screen' in event.arguments || 'publishedDate' in event.arguments) {
+    return handlePublishNewArticle(event);
   } else {
     return handleGetTickerNews(event, dbConfig);
   }
+};
+
+const handlePublishNewArticle = (event: any) => {
+  const a = event.arguments;
+  return {
+    id:            a.id            ?? 0,
+    ticker:        a.ticker        ?? '',
+    headline:      a.headline      ?? '',
+    summary:       a.summary       ?? '',
+    article:       a.article       ?? '',
+    publishedDate: a.publishedDate ?? new Date().toISOString(),
+    source:        a.source        ?? '',
+    url:           a.url           ?? '',
+    importance:    a.importance    ?? '',
+    category:      a.category      ?? '',
+    screen:        a.screen        ?? '',
+  };
 };
 
 const handleGetTickerNews = async (event: any, dbConfig: object) => {

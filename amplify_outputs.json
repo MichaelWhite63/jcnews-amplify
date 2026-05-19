@@ -1,11 +1,36 @@
 {
-  "data": {
-    "url": "https://g54zkvq6ezftzlpwy4mojsbdju.appsync-api.us-east-2.amazonaws.com/graphql",
+  "auth": {
+    "user_pool_id": "us-east-2_pnvwYq8Tn",
     "aws_region": "us-east-2",
-    "api_key": "da2-xcpzq54rcrb4nbeuvxwzrtps6y",
-    "default_authorization_type": "API_KEY",
+    "user_pool_client_id": "36veplt06vfp3l2nc3qhi99c74",
+    "identity_pool_id": "us-east-2:b6ebac58-394c-47bd-9b60-b218aba623ab",
+    "mfa_methods": [],
+    "standard_required_attributes": [
+      "email"
+    ],
+    "username_attributes": [
+      "email"
+    ],
+    "user_verification_types": [
+      "email"
+    ],
+    "groups": [],
+    "mfa_configuration": "NONE",
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_symbols": true,
+      "require_uppercase": true
+    },
+    "unauthenticated_identities_enabled": true
+  },
+  "data": {
+    "url": "https://pqt7gbtx5vejdphzonk65k3ehm.appsync-api.us-east-2.amazonaws.com/graphql",
+    "aws_region": "us-east-2",
+    "default_authorization_type": "AWS_IAM",
     "authorization_types": [
-      "AWS_IAM"
+      "AMAZON_COGNITO_USER_POOLS"
     ],
     "model_introspection": {
       "version": 1,
@@ -80,6 +105,13 @@
             },
             "category": {
               "name": "category",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "screen": {
+              "name": "screen",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -281,8 +313,96 @@
             }
           }
         }
+      },
+      "mutations": {
+        "publishNewArticle": {
+          "name": "publishNewArticle",
+          "isArray": false,
+          "type": {
+            "nonModel": "NewsArticle"
+          },
+          "isRequired": false,
+          "arguments": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false
+            },
+            "ticker": {
+              "name": "ticker",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "headline": {
+              "name": "headline",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "summary": {
+              "name": "summary",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "article": {
+              "name": "article",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "source": {
+              "name": "source",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "url": {
+              "name": "url",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "importance": {
+              "name": "importance",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "category": {
+              "name": "category",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "publishedDate": {
+              "name": "publishedDate",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false
+            },
+            "screen": {
+              "name": "screen",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            }
+          }
+        }
+      },
+      "subscriptions": {
+        "onNewArticle": {
+          "name": "onNewArticle",
+          "isArray": false,
+          "type": {
+            "nonModel": "NewsArticle"
+          },
+          "isRequired": false
+        }
       }
     }
   },
-  "version": "1.3"
+  "version": "1.4"
 }

@@ -13,6 +13,7 @@ const schema = a.schema({
     url: a.string(),
     importance: a.string(),
     category: a.string(),
+    screen: a.string(),
   }),
 
   Security: a.customType({
@@ -66,6 +67,31 @@ const schema = a.schema({
     .handler(
       a.handler.function(newsQuery)
     ),
+
+  publishNewArticle: a
+    .mutation()
+    .arguments({
+      id:            a.integer(),
+      ticker:        a.string().required(),
+      headline:      a.string(),
+      summary:       a.string(),
+      article:       a.string(),
+      source:        a.string(),
+      url:           a.string(),
+      importance:    a.string(),
+      category:      a.string(),
+      publishedDate: a.datetime(),
+      screen:        a.string(),
+    })
+    .returns(a.ref('NewsArticle'))
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
+
+  onNewArticle: a
+    .subscription()
+    .for(a.ref('publishNewArticle'))
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
 });
 
 export type Schema = ClientSchema<typeof schema>;
