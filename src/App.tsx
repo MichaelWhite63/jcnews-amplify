@@ -9,7 +9,7 @@ import FxPanel from './components/FxPanel'
 import InflationPanel from './components/InflationPanel'
 import EmploymentPanel from './components/EmploymentPanel'
 import TradePanel from './components/TradePanel'
-import { oilNewsArticles, ratesNewsArticles, fxNewsArticles, inflationNewsArticles, employmentNewsArticles, tradeNewsArticles, type DowJonesArticle } from './data/dowJonesData'
+import { type DowJonesArticle } from './data/dowJonesData'
 import './App.css'
 
 interface NewsArticle {
@@ -89,6 +89,8 @@ function App() {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
   const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news'>('db')
+  const [macroArticles, setMacroArticles] = useState<DowJonesArticle[]>([])
+  const [macroLoading, setMacroLoading] = useState(false)
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
@@ -214,6 +216,32 @@ function App() {
     setUnreadScreens(prev => prev[key] ? { ...prev, [key]: false } : prev)
   }
 
+  const screenFromView = (view: string) => view.replace('_news', '')
+
+  const fetchMacroNews = async (view: string) => {
+    const screen = screenFromView(view)
+    setMacroLoading(true)
+    setSelectedDjArticle(null)
+    try {
+      const { data: result, errors } = await client.queries.getMacroNews({ screen, limit: 50 })
+      if (errors) throw new Error(errors[0].message)
+      const articles: DowJonesArticle[] = (result ?? []).map((a: any) => ({
+        id:            a.id,
+        headline:      a.headline    || '',
+        publishedDate: a.publishedAt || new Date().toISOString(),
+        body:          a.report      || '',
+        industry:      '',
+        source:        view as DowJonesArticle['source'],
+      }))
+      setMacroArticles(articles)
+    } catch (err) {
+      console.error('Error fetching macro news:', err)
+      setMacroArticles([])
+    } finally {
+      setMacroLoading(false)
+    }
+  }
+
   const addToSearchHistory = (tickerValue: string) => {
     const newHistory = [tickerValue, ...searchHistory.filter(t => t !== tickerValue)].slice(0, 12)
     setSearchHistory(newHistory)
@@ -291,6 +319,12 @@ function App() {
     clearUnread(historicalTicker)
     fetchTickerNews(historicalTicker)
   }
+
+  useEffect(() => {
+    if (activeView !== 'db') {
+      fetchMacroNews(activeView)
+    }
+  }, [activeView])
 
   const toggleIndustryDropdown = () => {
     if (!showIndustryDropdown && industryButtonRef.current) {
@@ -426,14 +460,10 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {({
-                    oil_news: oilNewsArticles,
-                    rates_news: ratesNewsArticles,
-                    fx_news: fxNewsArticles,
-                    inflation_news: inflationNewsArticles,
-                    employment_news: employmentNewsArticles,
-                    trade_news: tradeNewsArticles,
-                  }[activeView as string] ?? []).map((article: DowJonesArticle) => {
+                  {macroLoading ? (
+                    <tr><td colSpan={3} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
+                  ) : null}
+                  {!macroLoading && macroArticles.map((article: DowJonesArticle) => {
                     const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
                     return [
                       <tr

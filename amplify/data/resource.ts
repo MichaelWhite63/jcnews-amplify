@@ -44,6 +44,19 @@ const schema = a.schema({
     companyName: a.string(),
   }),
 
+  MacroNewsArticle: a.customType({
+    id: a.integer(),
+    screen: a.string(),
+    headline: a.string(),
+    summary: a.string(),
+    report: a.string(),
+    source: a.string(),
+    url: a.string(),
+    publishedAt: a.datetime(),
+    importance: a.integer(),
+    category: a.string(),
+  }),
+
 
   getTickerNews: a
     .query()
@@ -67,6 +80,16 @@ const schema = a.schema({
     .handler(
       a.handler.function(newsQuery)
     ),
+
+  getMacroNews: a
+    .query()
+    .arguments({
+      screen: a.string().required(),
+      limit:  a.integer(),
+    })
+    .returns(a.ref('MacroNewsArticle').array())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
 
   publishNewArticle: a
     .mutation()

@@ -67,7 +67,11 @@ export const handler = async (event: any) => {
   // Route to appropriate handler based on arguments
   if ('industry' in event.arguments) {
     return handleGetCompaniesByIndustry(event, dbConfig);
-  } else if ('screen' in event.arguments || 'publishedDate' in event.arguments) {
+  } else if ('screen' in event.arguments && !('ticker' in event.arguments)) {
+    return handleGetMacroNews(event, dbConfig);
+  } else if ('ticker' in event.arguments && 'screen' in event.arguments) {
+    return handlePublishNewArticle(event);
+  } else if ('publishedDate' in event.arguments) {
     return handlePublishNewArticle(event);
   } else {
     return handleGetTickerNews(event, dbConfig);
@@ -211,6 +215,48 @@ const handleGetCompaniesByIndustry = async (event: any, dbConfig: object) => {
   } catch (error) {
     console.error('Database error:', error);
     throw new Error(`Failed to fetch companies by industry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+};
+
+const handleGetMacroNews = async (event: any, dbConfig: object) => {
+  const { screen, limit = 50 } = event.arguments;
+  console.log('Fetching macro news for screen:', screen, 'limit:', limit);
+
+  let connection;
+
+  try {
+    connection = await mysql.createConnection(dbConfig);
+
+    const [rows] = await connection.query<any[]>(
+      `SELECT id, screen, headline, summary, report, source, url,
+              published_at, importance, category
+       FROM dj_macro_news
+       WHERE screen = ?
+       ORDER BY published_at DESC
+       LIMIT ?`,
+      [screen, limit]
+    );
+
+    return rows.map((row: any) => ({
+      id:          row.id,
+      screen:      row.screen,
+      headline:    row.headline    || '',
+      summary:     row.summary     || '',
+      report:      row.report      || '',
+      source:      row.source      || 'Dow Jones',
+      url:         row.url         || '',
+      publishedAt: row.published_at ? new Date(row.published_at).toISOString() : new Date().toISOString(),
+      importance:  row.importance  ?? 5,
+      category:    row.category    || '',
+    }));
+
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error(`Failed to fetch macro news: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
     if (connection) {
       await connection.end();

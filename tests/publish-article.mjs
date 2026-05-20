@@ -19,7 +19,7 @@ import { defaultProvider } from '@aws-sdk/credential-provider-node';
 // ── Config ─────────────────────────────────────────────────────────────────
 const APPSYNC_URL =
   process.env.APPSYNC_URL ||
-  'https://pqt7gbtx5vejdphzonk65k3ehm.appsync-api.us-east-2.amazonaws.com/graphql';
+  'https://g54zkvq6ezftzlpwy4mojsbdju.appsync-api.us-east-2.amazonaws.com/graphql';
 const REGION = process.env.AWS_REGION || 'us-east-2';
 
 // ── Parse CLI args ──────────────────────────────────────────────────────────
