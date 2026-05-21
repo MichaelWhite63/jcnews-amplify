@@ -153,14 +153,51 @@ function App() {
       sub = observable.subscribe({
         next: (raw: any) => {
           console.log('[sub] raw payload:', JSON.stringify(raw))
-          // Amplify Gen 2 custom subscriptions deliver data directly or wrapped
           const article = raw?.data?.onNewArticle ?? raw?.onNewArticle ?? raw
           console.log('[sub] article:', article)
           if (!article || typeof article !== 'object') return
           const key: string = article.screen || article.ticker
           if (!key) return
           console.log('[sub] key:', key, '| active:', activeScreenKeyRef.current)
-          if (key !== activeScreenKeyRef.current) {
+
+          const macroScreens = Object.values(VIEW_TO_SCREEN_KEY)
+          if (article.screen && macroScreens.includes(article.screen)) {
+            if (article.screen === activeScreenKeyRef.current) {
+              // Currently viewing this macro screen — prepend the article immediately
+              setMacroArticles(prev => [{
+                id:            article.id ?? Date.now(),
+                headline:      article.headline      || '',
+                publishedDate: article.publishedDate || new Date().toISOString(),
+                body:          article.article       || article.report || '',
+                industry:      '',
+                source:        (article.screen + '_news') as DowJonesArticle['source'],
+              }, ...prev])
+            } else {
+              setUnreadScreens(prev => ({ ...prev, [article.screen]: true }))
+            }
+            return
+          }
+
+          // Ticker article
+          if (key === activeScreenKeyRef.current) {
+            // Currently viewing this ticker — prepend to the news table
+            setData(prev => {
+              if (!prev) return prev
+              const newArticle = {
+                id:            article.id            ?? Date.now(),
+                ticker:        article.ticker         || '',
+                headline:      article.headline       || '',
+                summary:       article.summary        || '',
+                article:       article.article        || '',
+                publishedDate: article.publishedDate  || new Date().toISOString(),
+                source:        article.source         || '',
+                url:           article.url            || '',
+                importance:    article.importance     || '',
+                category:      article.category       || '',
+              }
+              return { ...prev, newsArticles: [newArticle, ...(prev.newsArticles ?? [])] }
+            })
+          } else {
             setUnreadScreens(prev => ({ ...prev, [key]: true }))
           }
         },

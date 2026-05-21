@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-east-2_pnvwYq8Tn",
+    "user_pool_id": "us-east-2_i9CnFBWeG",
     "aws_region": "us-east-2",
-    "user_pool_client_id": "36veplt06vfp3l2nc3qhi99c74",
-    "identity_pool_id": "us-east-2:b6ebac58-394c-47bd-9b60-b218aba623ab",
+    "user_pool_client_id": "g8r9jf7k3ghuoseg86gek46hd",
+    "identity_pool_id": "us-east-2:34ba7580-a079-4156-b74f-1aeca86b176e",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,7 +26,7 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://pqt7gbtx5vejdphzonk65k3ehm.appsync-api.us-east-2.amazonaws.com/graphql",
+    "url": "https://g54zkvq6ezftzlpwy4mojsbdju.appsync-api.us-east-2.amazonaws.com/graphql",
     "aws_region": "us-east-2",
     "default_authorization_type": "AWS_IAM",
     "authorization_types": [
@@ -271,6 +271,81 @@
               "attributes": []
             }
           }
+        },
+        "MacroNewsArticle": {
+          "name": "MacroNewsArticle",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "screen": {
+              "name": "screen",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "headline": {
+              "name": "headline",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "summary": {
+              "name": "summary",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "report": {
+              "name": "report",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "source": {
+              "name": "source",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "url": {
+              "name": "url",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "publishedAt": {
+              "name": "publishedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "importance": {
+              "name": "importance",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "category": {
+              "name": "category",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
         }
       },
       "queries": {
@@ -310,6 +385,29 @@
               "isArray": false,
               "type": "String",
               "isRequired": true
+            }
+          }
+        },
+        "getMacroNews": {
+          "name": "getMacroNews",
+          "isArray": true,
+          "type": {
+            "nonModel": "MacroNewsArticle"
+          },
+          "isRequired": false,
+          "isArrayNullable": true,
+          "arguments": {
+            "screen": {
+              "name": "screen",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "limit": {
+              "name": "limit",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false
             }
           }
         }
@@ -404,5 +502,5 @@
       }
     }
   },
-  "version": "1.4"
+  "version": "1.3"
 }
