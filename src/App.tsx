@@ -91,6 +91,7 @@ function App() {
   const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news'>('db')
   const [macroArticles, setMacroArticles] = useState<DowJonesArticle[]>([])
   const [macroLoading, setMacroLoading] = useState(false)
+  const [newArticleIds, setNewArticleIds] = useState<Set<number>>(new Set())
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
@@ -103,6 +104,7 @@ function App() {
   const articleWindowRef = useRef<Window | null>(null)
   const articleCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeScreenKeyRef = useRef<string>(initialTicker)
+  const pendingNewIdsRef = useRef<Record<string, number[]>>({})
 
   const openArticle = (url: string) => {
     if (articleCloseTimerRef.current) {
@@ -164,15 +166,23 @@ function App() {
           if (article.screen && macroScreens.includes(article.screen)) {
             if (article.screen === activeScreenKeyRef.current) {
               // Currently viewing this macro screen — prepend the article immediately
+              const newId = article.id ?? Date.now()
               setMacroArticles(prev => [{
-                id:            article.id ?? Date.now(),
+                id:            newId,
                 headline:      article.headline      || '',
                 publishedDate: article.publishedDate || new Date().toISOString(),
                 body:          article.article       || article.report || '',
                 industry:      '',
                 source:        (article.screen + '_news') as DowJonesArticle['source'],
               }, ...prev])
+              markArticleNew(newId)
             } else {
+              // Store the ID so we can highlight it when the user switches to this screen
+              const pendingId = article.id ?? Date.now()
+              pendingNewIdsRef.current[article.screen] = [
+                ...(pendingNewIdsRef.current[article.screen] ?? []),
+                pendingId,
+              ]
               setUnreadScreens(prev => ({ ...prev, [article.screen]: true }))
             }
             return
@@ -181,10 +191,11 @@ function App() {
           // Ticker article
           if (key === activeScreenKeyRef.current) {
             // Currently viewing this ticker — prepend to the news table
+            const newId = article.id ?? Date.now()
             setData(prev => {
               if (!prev) return prev
               const newArticle = {
-                id:            article.id            ?? Date.now(),
+                id:            newId,
                 ticker:        article.ticker         || '',
                 headline:      article.headline       || '',
                 summary:       article.summary        || '',
@@ -197,7 +208,14 @@ function App() {
               }
               return { ...prev, newsArticles: [newArticle, ...(prev.newsArticles ?? [])] }
             })
+            markArticleNew(newId)
           } else {
+            // Store the ID so we can highlight it when the user switches to this ticker
+            const pendingId = article.id ?? Date.now()
+            pendingNewIdsRef.current[key] = [
+              ...(pendingNewIdsRef.current[key] ?? []),
+              pendingId,
+            ]
             setUnreadScreens(prev => ({ ...prev, [key]: true }))
           }
         },
@@ -253,6 +271,17 @@ function App() {
     setUnreadScreens(prev => prev[key] ? { ...prev, [key]: false } : prev)
   }
 
+  const markArticleNew = (id: number) => {
+    setNewArticleIds(prev => new Set(prev).add(id))
+    setTimeout(() => {
+      setNewArticleIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }, 30000)
+  }
+
   const screenFromView = (view: string) => view.replace('_news', '')
 
   const fetchMacroNews = async (view: string) => {
@@ -271,6 +300,10 @@ function App() {
         source:        view as DowJonesArticle['source'],
       }))
       setMacroArticles(articles)
+      // Highlight any articles that arrived via subscription while on another screen
+      const pending = pendingNewIdsRef.current[screen] ?? []
+      pending.forEach(id => markArticleNew(id))
+      delete pendingNewIdsRef.current[screen]
     } catch (err) {
       console.error('Error fetching macro news:', err)
       setMacroArticles([])
@@ -307,6 +340,11 @@ function App() {
       }
 
       setData(result as TickerNewsData)
+
+      // Highlight any articles that arrived via subscription while on another screen
+      const pending = pendingNewIdsRef.current[tickerValue] ?? []
+      pending.forEach(id => markArticleNew(id))
+      delete pendingNewIdsRef.current[tickerValue]
 
       // Add to search history
       addToSearchHistory(tickerValue)
@@ -502,10 +540,11 @@ function App() {
                   ) : null}
                   {!macroLoading && macroArticles.map((article: DowJonesArticle) => {
                     const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
+                    const isNew = newArticleIds.has(article.id)
                     return [
                       <tr
                         key={article.id}
-                        className={`article-row${isExpanded ? ' expanded' : ''}`}
+                        className={`article-row${isExpanded ? ' expanded' : ''}${isNew ? ' article-row--new' : ''}`}
                         onClick={() => setSelectedDjArticle(prev =>
                           prev?.id === article.id && prev?.source === article.source ? null : article
                         )}
@@ -621,10 +660,11 @@ function App() {
                       const articleText = article.article || article.summary || ''
                       const charCount = articleText.length
                       const hasDetail = charCount > 0
+                      const isNew = newArticleIds.has(article.id)
                       rows.push(
                         <tr
                           key={article.id}
-                          className={`article-row${isExpanded ? ' expanded' : ''}`}
+                          className={`article-row${isExpanded ? ' expanded' : ''}${isNew ? ' article-row--new' : ''}`}
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
@@ -808,12 +848,12 @@ function App() {
         </aside>
         <div className="oil-btn-container">
           {([
-            ['oil_news',        'oil',        'oil_news'],
-            ['rates_news',      'rates',      'rates_news'],
-            ['fx_news',         'fx',         'fx_news'],
-            ['inflation_news',  'inflation',  'inflation_news'],
-            ['employment_news', 'employment', 'employment_news'],
-            ['trade_news',      'trade',      'trade_news'],
+            ['oil_news',        'oil',        'OIL'],
+            ['rates_news',      'rates',      'RATES'],
+            ['fx_news',         'fx',         'FX'],
+            ['inflation_news',  'inflation',  'INFLATION'],
+            ['employment_news', 'employment', 'EMPLOYMENT'],
+            ['trade_news',      'trade',      'TRADE'],
           ] as [string, string, string][]).map(([view, key, label]) => (
             <button
               key={view}

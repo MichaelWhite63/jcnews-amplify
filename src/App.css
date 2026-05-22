@@ -1,6 +1,7 @@
 /* ── Layout ─────────────────────────────────────────── */
 .container {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -9,7 +10,8 @@
 .split-container {
   display: flex;
   gap: 1.5rem;
-  min-height: calc(100vh - 3rem);
+  flex: 1;
+  min-height: 0;
 }
 
 .news-table-section {
@@ -272,6 +274,21 @@
   background-color: var(--accent-dim) !important;
 }
 
+.article-row--new {
+  border-left: 3px solid #EF9F27;
+  animation: fadeNewHighlight 30s forwards;
+}
+
+.article-row--new .headline-cell {
+  font-weight: 700;
+}
+
+@keyframes fadeNewHighlight {
+  0%   { background-color: rgba(239, 159, 39, 0.15); }
+  50%  { background-color: rgba(239, 159, 39, 0.08); }
+  100% { background-color: transparent; }
+}
+
 .article-row.expanded .headline-cell {
   color: var(--accent-hover);
 }
@@ -413,20 +430,18 @@
   gap: 0.75rem;
   width: 300px;
   flex-shrink: 0;
+  height: 100%;
 }
 
 /* ── Security Panel ─────────────────────────────────── */
 .security-panel {
   width: 100%;
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
   background-color: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 0 1.5rem 1.5rem 1.5rem;
-  position: sticky;
-  top: 1.5rem;
-  height: fit-content;
-  max-height: calc(100vh - 3rem);
   overflow-y: auto;
   overflow-x: visible;
 }
@@ -760,17 +775,38 @@
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 1024px) {
+  /* Columns stack — release the viewport-height chain so the page can scroll */
+  body {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  #root {
+    height: auto;
+  }
+
+  .container {
+    height: auto;
+  }
+
   .split-container {
     flex-direction: column;
+    flex: none;
   }
 
   .right-column {
     width: 100%;
+    height: auto;
   }
 
+  /* Give the panel a capped height so buttons land at a consistent position
+     on mobile regardless of how much content the panel contains */
   .security-panel {
     position: static;
-    max-height: none;
+    flex: none;
+    height: auto;
+    max-height: 55vh;
+    overflow-y: auto;
   }
 }
 
