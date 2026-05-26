@@ -565,6 +565,21 @@ function App() {
                                 <span className="article-summary-meta">
                                   Dow Jones · {formatDate(article.publishedDate)}
                                 </span>
+                                <div className="accordion-detail-buttons">
+                                  <button
+                                    className="article-summary-link"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      const subject = encodeURIComponent(article.headline || 'News Article')
+                                      const body = encodeURIComponent(
+                                        `${article.headline}\n\n${article.body}`
+                                      )
+                                      window.location.href = `mailto:?subject=${subject}&body=${body}`
+                                    }}
+                                  >
+                                    Send Email
+                                  </button>
+                                </div>
                               </div>
                               <div className="accordion-detail-text">
                                 {article.body
