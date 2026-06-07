@@ -161,6 +161,8 @@ function App() {
           const article = raw?.data?.onNewArticle ?? raw?.onNewArticle ?? raw
           console.log('[sub] article:', article)
           if (!article || typeof article !== 'object') return
+          if (allowedSources !== undefined && article.source &&
+              !allowedSources.includes(article.source)) return
           const key: string = article.screen || article.ticker
           if (!key) return
           console.log('[sub] key:', key, '| active:', activeScreenKeyRef.current)
