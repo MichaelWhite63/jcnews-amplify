@@ -74,7 +74,9 @@ function getPrevTradeDateCutoff(): Date {
 
 function App() {
   const client = generateClient<Schema>({ authMode: 'iam' })
-  const initialTicker = new URLSearchParams(window.location.search).get('ticker') || 'AAPL US'
+  const params = new URLSearchParams(window.location.search)
+  const initialTicker = params.get('ticker') || 'AAPL US'
+  const userEmail = params.get('email') || undefined
   const initialCountryCode = initialTicker.includes(' ') ? initialTicker.split(' ').pop()! : 'US'
   const [defaultCountryCode, setDefaultCountryCode] = useState(initialCountryCode)
   const [data, setData] = useState<TickerNewsData | null>(null)
@@ -95,6 +97,7 @@ function App() {
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const [allowedSources, setAllowedSources] = useState<string[] | undefined>(undefined)
   const [unreadScreens, setUnreadScreens] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('unreadScreens')
     return saved ? JSON.parse(saved) : {}
@@ -254,7 +257,22 @@ function App() {
   }, [])
 
   useEffect(() => {
-    fetchTickerNews()
+    const loadPermissionsAndNews = async () => {
+      let sources: string[] | undefined = undefined
+      if (userEmail) {
+        try {
+          const { data: result } = await client.queries.getPersonPermissions({ email: userEmail })
+          sources = (result ?? []).filter(Boolean) as string[]
+          setAllowedSources(sources)
+        } catch (err) {
+          console.error('Error fetching permissions:', err)
+          sources = []
+          setAllowedSources([])
+        }
+      }
+      fetchTickerNews(undefined, sources)
+    }
+    loadPermissionsAndNews()
   }, [])
 
   const processTicker = (tickerValue: string): string => {
@@ -289,7 +307,11 @@ function App() {
     setMacroLoading(true)
     setSelectedDjArticle(null)
     try {
-      const { data: result, errors } = await client.queries.getMacroNews({ screen, limit: 50 })
+      const { data: result, errors } = await client.queries.getMacroNews({
+        screen,
+        limit: 50,
+        ...(allowedSources !== undefined && { allowedSources }),
+      })
       if (errors) throw new Error(errors[0].message)
       const articles: DowJonesArticle[] = (result ?? []).map((a: any) => ({
         id:            a.id,
@@ -318,8 +340,9 @@ function App() {
     localStorage.setItem('tickerSearchHistory', JSON.stringify(newHistory))
   }
 
-  const fetchTickerNews = async (tickerToFetch?: string) => {
+  const fetchTickerNews = async (tickerToFetch?: string, sourcesOverride?: string[]) => {
     const tickerValue = tickerToFetch || searchTicker
+    const sources = sourcesOverride !== undefined ? sourcesOverride : allowedSources
     setLoading(true)
     setError(null)
     setShowIndustryDropdown(false)
@@ -332,7 +355,8 @@ function App() {
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
         ticker: tickerValue,
-        limit: 10
+        limit: 10,
+        ...(sources !== undefined && { allowedSources: sources }),
       })
 
       if (errors) {

@@ -65,7 +65,9 @@ export const handler = async (event: any) => {
   };
 
   // Route to appropriate handler based on arguments
-  if ('industry' in event.arguments) {
+  if ('email' in event.arguments && !('ticker' in event.arguments)) {
+    return handleGetPersonPermissions(event, dbConfig);
+  } else if ('industry' in event.arguments) {
     return handleGetCompaniesByIndustry(event, dbConfig);
   } else if ('screen' in event.arguments && !('ticker' in event.arguments)) {
     return handleGetMacroNews(event, dbConfig);
@@ -95,8 +97,39 @@ const handlePublishNewArticle = (event: any) => {
   };
 };
 
+const handleGetPersonPermissions = async (event: any, dbConfig: object) => {
+  const { email } = event.arguments;
+  console.log('Fetching permissions for:', email);
+
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute<any[]>(
+      'SELECT accessList FROM Person WHERE email = ? LIMIT 1',
+      [email]
+    );
+
+    if (!rows.length || !rows[0].accessList) return [];
+
+    const accessList: { Source: string; Permission: boolean }[] =
+      typeof rows[0].accessList === 'string'
+        ? JSON.parse(rows[0].accessList)
+        : rows[0].accessList;
+
+    return accessList
+      .filter(item => item.Permission === true)
+      .map(item => item.Source);
+
+  } catch (error) {
+    console.error('Error fetching person permissions:', error);
+    return [];
+  } finally {
+    if (connection) await connection.end();
+  }
+};
+
 const handleGetTickerNews = async (event: any, dbConfig: object) => {
-  const { ticker, limit = 10 } = event.arguments;
+  const { ticker, limit = 10, allowedSources } = event.arguments;
   console.log('Fetching news for ticker:', ticker, 'with limit:', limit);
 
   let connection;
@@ -136,14 +169,30 @@ const handleGetTickerNews = async (event: any, dbConfig: object) => {
     const cutoffStr = cutoff.toISOString().slice(0, 19).replace('T', ' ');
     console.log(`Cutoff date for query: ${cutoffStr}`);
 
-    const [newsRows] = await connection.query<any[]>(
-      `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
-       FROM news
-       WHERE ticker = ?
-         AND createdAt >= ?
-       ORDER BY createdAt DESC`,
-      [ticker, cutoffStr]
-    );
+    let newsRows: any[];
+    if (allowedSources && allowedSources.length === 0) {
+      newsRows = [];
+    } else if (allowedSources && allowedSources.length > 0) {
+      const placeholders = allowedSources.map(() => '?').join(', ');
+      [newsRows] = await connection.query<any[]>(
+        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
+         FROM news
+         WHERE ticker = ?
+           AND createdAt >= ?
+           AND source IN (${placeholders})
+         ORDER BY createdAt DESC`,
+        [ticker, cutoffStr, ...allowedSources]
+      );
+    } else {
+      [newsRows] = await connection.query<any[]>(
+        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
+         FROM news
+         WHERE ticker = ?
+           AND createdAt >= ?
+         ORDER BY createdAt DESC`,
+        [ticker, cutoffStr]
+      );
+    }
 
     return {
       security: securityRow ? {
@@ -223,7 +272,7 @@ const handleGetCompaniesByIndustry = async (event: any, dbConfig: object) => {
 };
 
 const handleGetMacroNews = async (event: any, dbConfig: object) => {
-  const { screen, limit = 50 } = event.arguments;
+  const { screen, limit = 50, allowedSources } = event.arguments;
   console.log('Fetching macro news for screen:', screen, 'limit:', limit);
 
   let connection;
@@ -231,15 +280,32 @@ const handleGetMacroNews = async (event: any, dbConfig: object) => {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    const [rows] = await connection.query<any[]>(
-      `SELECT id, screen, headline, summary, report, source, url,
-              published_at, importance, category
-       FROM dj_macro_news
-       WHERE screen = ?
-       ORDER BY published_at DESC
-       LIMIT ?`,
-      [screen, limit]
-    );
+    let rows: any[];
+    if (allowedSources && allowedSources.length === 0) {
+      rows = [];
+    } else if (allowedSources && allowedSources.length > 0) {
+      const placeholders = allowedSources.map(() => '?').join(', ');
+      [rows] = await connection.query<any[]>(
+        `SELECT id, screen, headline, summary, report, source, url,
+                published_at, importance, category
+         FROM dj_macro_news
+         WHERE screen = ?
+           AND source IN (${placeholders})
+         ORDER BY published_at DESC
+         LIMIT ?`,
+        [screen, ...allowedSources, limit]
+      );
+    } else {
+      [rows] = await connection.query<any[]>(
+        `SELECT id, screen, headline, summary, report, source, url,
+                published_at, importance, category
+         FROM dj_macro_news
+         WHERE screen = ?
+         ORDER BY published_at DESC
+         LIMIT ?`,
+        [screen, limit]
+      );
+    }
 
     return rows.map((row: any) => ({
       id:          row.id,

@@ -58,11 +58,21 @@ const schema = a.schema({
   }),
 
 
+  getPersonPermissions: a
+    .query()
+    .arguments({
+      email: a.string().required(),
+    })
+    .returns(a.string().array())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
+
   getTickerNews: a
     .query()
     .arguments({
-      ticker: a.string().required(),
-      limit: a.integer(),
+      ticker:         a.string().required(),
+      limit:          a.integer(),
+      allowedSources: a.string().array(),
     })
     .returns(a.ref('TickerNewsData'))
     .authorization((allow) => [allow.guest()])
@@ -84,8 +94,9 @@ const schema = a.schema({
   getMacroNews: a
     .query()
     .arguments({
-      screen: a.string().required(),
-      limit:  a.integer(),
+      screen:         a.string().required(),
+      limit:          a.integer(),
+      allowedSources: a.string().array(),
     })
     .returns(a.ref('MacroNewsArticle').array())
     .authorization((allow) => [allow.guest()])
