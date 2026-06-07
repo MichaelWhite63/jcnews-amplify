@@ -116,9 +116,11 @@ const handleGetPersonPermissions = async (event: any, dbConfig: object) => {
         ? JSON.parse(rows[0].accessList)
         : rows[0].accessList;
 
-    return accessList
+    const sources = accessList
       .filter(item => item.Permission === true)
       .map(item => item.Source);
+    console.log('Allowed sources for', email, ':', JSON.stringify(sources));
+    return sources;
 
   } catch (error) {
     console.error('Error fetching person permissions:', error);
