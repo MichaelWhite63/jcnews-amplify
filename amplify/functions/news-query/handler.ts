@@ -105,7 +105,7 @@ const handleGetPersonPermissions = async (event: any, dbConfig: object) => {
   try {
     connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute<any[]>(
-      'SELECT accessList FROM Person WHERE email = ? LIMIT 1',
+      'SELECT accessList FROM persons WHERE email = ? LIMIT 1',
       [email]
     );
 
