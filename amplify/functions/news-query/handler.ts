@@ -65,7 +65,9 @@ export const handler = async (event: any) => {
   };
 
   // Route to appropriate handler based on arguments
-  if ('email' in event.arguments && !('ticker' in event.arguments)) {
+  if (event.fieldName === 'getCompanyProfile') {
+    return handleGetCompanyProfile(event, dbConfig);
+  } else if ('email' in event.arguments && !('ticker' in event.arguments)) {
     return handleGetPersonPermissions(event, dbConfig);
   } else if ('industry' in event.arguments) {
     return handleGetCompaniesByIndustry(event, dbConfig);
@@ -325,6 +327,43 @@ const handleGetMacroNews = async (event: any, dbConfig: object) => {
   } catch (error) {
     console.error('Database error:', error);
     throw new Error(`Failed to fetch macro news: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+};
+
+const handleGetCompanyProfile = async (event: any, dbConfig: object) => {
+  const { ticker } = event.arguments;
+  console.log('Fetching company profile for ticker:', ticker);
+
+  let connection;
+
+  try {
+    connection = await mysql.createConnection(dbConfig);
+
+    const [rows] = await connection.query<any[]>(
+      `SELECT display_name, description, current_expectation, sensitivity_weight, theme_type, status
+       FROM company_status
+       WHERE ticker = ?
+         AND status IN ('ACTIVE', 'FADING')
+       ORDER BY sensitivity_weight DESC`,
+      [ticker]
+    );
+
+    return rows.map((row: any) => ({
+      display_name:       row.display_name        || '',
+      description:        row.description         || '',
+      expectation:        row.current_expectation || '',
+      sensitivity_weight: row.sensitivity_weight   ?? 0,
+      theme_type:         row.theme_type           || '',
+      status:             row.status               || '',
+    }));
+
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error(`Failed to fetch company profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
     if (connection) {
       await connection.end();

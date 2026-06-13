@@ -829,3 +829,88 @@
     padding: 1.25rem;
   }
 }
+
+/* ── Profile View ───────────────────────────────────── */
+.profile-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.profile-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.profile-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.profile-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.855rem;
+}
+
+.profile-table thead th {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+}
+
+.profile-row {
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s;
+}
+
+.profile-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.profile-row--theme {
+  border-left-color: var(--accent);
+}
+
+.profile-row--event {
+  border-left-color: var(--yellow);
+}
+
+.profile-row td {
+  padding: 0.75rem;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.profile-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.profile-weight {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-desc {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  max-width: 220px;
+}
+
+.profile-exp {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  max-width: 240px;
+}

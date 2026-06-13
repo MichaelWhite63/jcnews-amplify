@@ -57,6 +57,15 @@ const schema = a.schema({
     category: a.string(),
   }),
 
+  CompanyTheme: a.customType({
+    display_name: a.string(),
+    description: a.string(),
+    expectation: a.string(),
+    sensitivity_weight: a.float(),
+    theme_type: a.string(),
+    status: a.string(),
+  }),
+
 
   getPersonPermissions: a
     .query()
@@ -99,6 +108,13 @@ const schema = a.schema({
       allowedSources: a.string().array(),
     })
     .returns(a.ref('MacroNewsArticle').array())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
+
+  getCompanyProfile: a
+    .query()
+    .arguments({ ticker: a.string().required() })
+    .returns(a.ref('CompanyTheme').array())
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(newsQuery)),
 

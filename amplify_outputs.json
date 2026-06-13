@@ -272,6 +272,53 @@
             }
           }
         },
+        "CompanyTheme": {
+          "name": "CompanyTheme",
+          "fields": {
+            "display_name": {
+              "name": "display_name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "description": {
+              "name": "description",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "expectation": {
+              "name": "expectation",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "sensitivity_weight": {
+              "name": "sensitivity_weight",
+              "isArray": false,
+              "type": "Float",
+              "isRequired": false,
+              "attributes": []
+            },
+            "theme_type": {
+              "name": "theme_type",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "MacroNewsArticle": {
           "name": "MacroNewsArticle",
           "fields": {
@@ -382,6 +429,23 @@
           "arguments": {
             "industry": {
               "name": "industry",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "getCompanyProfile": {
+          "name": "getCompanyProfile",
+          "isArray": true,
+          "type": {
+            "nonModel": "CompanyTheme"
+          },
+          "isRequired": false,
+          "isArrayNullable": true,
+          "arguments": {
+            "ticker": {
+              "name": "ticker",
               "isArray": false,
               "type": "String",
               "isRequired": true

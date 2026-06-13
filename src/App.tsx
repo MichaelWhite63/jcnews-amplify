@@ -53,6 +53,15 @@ interface RelatedCompany {
   companyName: string
 }
 
+interface CompanyTheme {
+  display_name: string
+  description: string
+  expectation: string
+  sensitivity_weight: number
+  theme_type: string
+  status: string
+}
+
 const VIEW_TO_SCREEN_KEY: Record<string, string> = {
   oil_news:        'oil',
   rates_news:      'rates',
@@ -102,6 +111,10 @@ function App() {
     const saved = localStorage.getItem('unreadScreens')
     return saved ? JSON.parse(saved) : {}
   })
+  const [showProfile, setShowProfile] = useState(false)
+  const [profileThemes, setProfileThemes] = useState<CompanyTheme[]>([])
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileTicker, setProfileTicker] = useState('')
   const industryButtonRef = useRef<HTMLButtonElement>(null)
   const tableScrollRef = useRef<HTMLDivElement>(null)
   const articleWindowRef = useRef<Window | null>(null)
@@ -336,6 +349,22 @@ function App() {
     }
   }
 
+  const fetchCompanyProfile = async (tickerValue: string) => {
+    setProfileLoading(true)
+    setProfileThemes([])
+    try {
+      const { data: result, errors } = await (client.queries as any).getCompanyProfile({ ticker: tickerValue })
+      if (errors) throw new Error(errors[0].message)
+      setProfileThemes((result ?? []) as CompanyTheme[])
+      setProfileTicker(tickerValue)
+    } catch (err) {
+      console.error('Error fetching company profile:', err)
+      setProfileThemes([])
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
   const addToSearchHistory = (tickerValue: string) => {
     const newHistory = [tickerValue, ...searchHistory.filter(t => t !== tickerValue)].slice(0, 12)
     setSearchHistory(newHistory)
@@ -353,6 +382,8 @@ function App() {
     setImportanceFilter('All')
     setCategoryFilter('All')
     clearUnread(tickerValue)
+    setShowProfile(false)
+    setProfileTicker('')
 
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
@@ -548,7 +579,40 @@ function App() {
       <div className="split-container">
         {/* Left Side - News Table */}
         <section className="news-table-section">
-          {activeView !== 'db' ? (
+          {showProfile && activeView === 'db' ? (
+            <div className="profile-scroll">
+              {profileLoading ? (
+                <p className="no-news">Loading profile...</p>
+              ) : profileThemes.length === 0 ? (
+                <p className="no-news">No profile available for {searchTicker}</p>
+              ) : (
+                <table className="profile-table">
+                  <thead>
+                    <tr>
+                      <th>Theme</th>
+                      <th>Description</th>
+                      <th>Expectation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {profileThemes.map((theme, i) => (
+                      <tr
+                        key={i}
+                        className={`profile-row profile-row--${theme.theme_type === 'PENDING_EVENT' ? 'event' : 'theme'}`}
+                      >
+                        <td>
+                          <div className="profile-name">{theme.display_name}</div>
+                          <div className="profile-weight">{theme.sensitivity_weight.toFixed(2)}</div>
+                        </td>
+                        <td className="profile-desc">{theme.description}</td>
+                        <td className="profile-exp">{theme.expectation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          ) : activeView !== 'db' ? (
             <>
             <div className="news-table-scroll">
             <div className="news-table">
@@ -786,6 +850,23 @@ function App() {
 
         {/* Right Side - Security Panel + Oil Button */}
         <div className="right-column">
+        {activeView === 'db' && (
+          <button
+            className={`oil-btn${showProfile ? ' active' : ''}`}
+            onClick={() => {
+              if (!showProfile) {
+                if (profileTicker !== searchTicker) {
+                  fetchCompanyProfile(searchTicker)
+                }
+                setShowProfile(true)
+              } else {
+                setShowProfile(false)
+              }
+            }}
+          >
+            Profile
+          </button>
+        )}
         {activeView === 'oil_news' ? <OilPanel /> :
          activeView === 'rates_news' ? <RatesPanel /> :
          activeView === 'fx_news' ? <FxPanel /> :
