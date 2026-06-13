@@ -878,7 +878,12 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.855rem;
+  table-layout: fixed;
 }
+
+.profile-table thead th:nth-child(1) { width: 18%; }
+.profile-table thead th:nth-child(2) { width: 27%; }
+.profile-table thead th:nth-child(3) { width: 55%; }
 
 .profile-table thead th {
   padding: 0.625rem 0.75rem;
@@ -917,6 +922,8 @@
   padding: 0.75rem;
   vertical-align: top;
   line-height: 1.45;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-name {
@@ -935,11 +942,9 @@
 .profile-desc {
   color: var(--text-secondary);
   font-size: 0.82rem;
-  max-width: 220px;
 }
 
 .profile-exp {
   color: var(--text-primary);
   font-size: 0.82rem;
-  max-width: 240px;
 }
