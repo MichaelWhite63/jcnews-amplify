@@ -556,7 +556,7 @@ function App() {
               }
             }}
           >
-            {showProfile ? 'News' : 'Profile'}
+            {showProfile ? 'News' : 'Risk Profile'}
           </button>
           {searchHistory.length > 0 && searchHistory.map((historyTicker, index) => (
             <span
