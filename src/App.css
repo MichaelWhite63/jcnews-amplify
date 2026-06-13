@@ -830,6 +830,35 @@
   }
 }
 
+/* ── Profile Toggle Button (top bar) ───────────────── */
+.profile-toggle-btn {
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background-color: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.profile-toggle-btn:hover {
+  border-color: var(--border-accent);
+  color: var(--accent-hover);
+}
+
+.profile-toggle-btn.active {
+  background-color: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
 /* ── Profile View ───────────────────────────────────── */
 .profile-scroll {
   flex: 1;

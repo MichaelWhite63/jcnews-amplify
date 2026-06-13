@@ -543,6 +543,21 @@ function App() {
           <button className="theme-toggle" onClick={() => setDarkMode(d => !d)} title="Toggle dark mode">
             {darkMode ? '☀' : '☾'}
           </button>
+          <button
+            className={`profile-toggle-btn${showProfile ? ' active' : ''}`}
+            onClick={() => {
+              if (!showProfile) {
+                if (profileTicker !== searchTicker) {
+                  fetchCompanyProfile(searchTicker)
+                }
+                setShowProfile(true)
+              } else {
+                setShowProfile(false)
+              }
+            }}
+          >
+            {showProfile ? 'News' : 'Profile'}
+          </button>
           {searchHistory.length > 0 && searchHistory.map((historyTicker, index) => (
             <span
               key={index}
@@ -850,23 +865,6 @@ function App() {
 
         {/* Right Side - Security Panel + Oil Button */}
         <div className="right-column">
-        {activeView === 'db' && (
-          <button
-            className={`oil-btn${showProfile ? ' active' : ''}`}
-            onClick={() => {
-              if (!showProfile) {
-                if (profileTicker !== searchTicker) {
-                  fetchCompanyProfile(searchTicker)
-                }
-                setShowProfile(true)
-              } else {
-                setShowProfile(false)
-              }
-            }}
-          >
-            Profile
-          </button>
-        )}
         {activeView === 'oil_news' ? <OilPanel /> :
          activeView === 'rates_news' ? <RatesPanel /> :
          activeView === 'fx_news' ? <FxPanel /> :
