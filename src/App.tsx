@@ -107,6 +107,7 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const [allowedSources, setAllowedSources] = useState<string[] | undefined>(undefined)
+  const [department, setDepartment] = useState<string>('equity')
   const [unreadScreens, setUnreadScreens] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('unreadScreens')
     return saved ? JSON.parse(saved) : {}
@@ -276,11 +277,12 @@ function App() {
       let sources: string[] | undefined = undefined
       if (userEmail) {
         try {
-          const { data: result } = await client.queries.getPersonPermissions({ email: userEmail })
-          sources = (result ?? []).filter(Boolean) as string[]
+          const { data: profile } = await client.queries.getUserProfile({ email: userEmail })
+          sources = ((profile?.allowedSources ?? []).filter(Boolean)) as string[]
           setAllowedSources(sources)
+          setDepartment(profile?.department ?? 'equity')
         } catch (err) {
-          console.error('Error fetching permissions:', err)
+          console.error('Error fetching user profile:', err)
           sources = []
           setAllowedSources([])
         }
@@ -872,7 +874,13 @@ function App() {
          activeView === 'employment_news' ? <EmploymentPanel /> :
          activeView === 'trade_news' ? <TradePanel /> : null}
         <aside className="security-panel" style={{ display: activeView === 'db' ? undefined : 'none' }}>
-          {data?.security ? (
+          {department === 'options' && (
+            <div className="options-panel-placeholder">
+              <h2>Options</h2>
+              <p>Options market data panel coming soon.</p>
+            </div>
+          )}
+          {department !== 'options' && data?.security ? (
             <>
               <h2>{data.security.companyName}</h2>
               <div className="security-info-grid">

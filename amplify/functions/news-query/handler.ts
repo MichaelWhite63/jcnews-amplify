@@ -67,8 +67,8 @@ export const handler = async (event: any) => {
   // Route to appropriate handler based on arguments
   if (event.fieldName === 'getCompanyProfile') {
     return handleGetCompanyProfile(event, dbConfig);
-  } else if ('email' in event.arguments && !('ticker' in event.arguments)) {
-    return handleGetPersonPermissions(event, dbConfig);
+  } else if (event.fieldName === 'getUserProfile') {
+    return handleGetUserProfile(event, dbConfig);
   } else if ('industry' in event.arguments) {
     return handleGetCompaniesByIndustry(event, dbConfig);
   } else if ('screen' in event.arguments && !('ticker' in event.arguments)) {
@@ -99,34 +99,51 @@ const handlePublishNewArticle = (event: any) => {
   };
 };
 
-const handleGetPersonPermissions = async (event: any, dbConfig: object) => {
+function normalizeDepartment(name: string | null): string {
+  const lower = (name || '').toLowerCase();
+  if (lower.startsWith('option')) return 'options';
+  if (lower.startsWith('equit'))  return 'equity';
+  return 'equity';
+}
+
+const handleGetUserProfile = async (event: any, dbConfig: object) => {
   const { email } = event.arguments;
-  console.log('Fetching permissions for:', email);
+  console.log('Fetching user profile for:', email);
 
   let connection;
   try {
     connection = await mysql.createConnection(dbConfig);
     const [rows] = await connection.execute<any[]>(
-      'SELECT accessList FROM persons WHERE email = ? LIMIT 1',
+      `SELECT p.accessList, d.name AS departmentName
+       FROM   persons p
+       LEFT JOIN departments d ON p.fkDepartmentId = d.id
+       WHERE  p.email = ?
+       LIMIT  1`,
       [email]
     );
 
-    if (!rows.length || !rows[0].accessList) return [];
+    if (!rows.length) {
+      console.warn('No person record found for:', email);
+      return { allowedSources: [], department: 'equity' };
+    }
 
     const accessList: { Source: string; Permission: boolean }[] =
       typeof rows[0].accessList === 'string'
-        ? JSON.parse(rows[0].accessList)
-        : rows[0].accessList;
+        ? JSON.parse(rows[0].accessList || '[]')
+        : (rows[0].accessList || []);
 
-    const sources = accessList
+    const allowedSources = accessList
       .filter(item => item.Permission === true)
       .map(item => item.Source);
-    console.log('Allowed sources for', email, ':', JSON.stringify(sources));
-    return sources;
+
+    const department = normalizeDepartment(rows[0].departmentName ?? null);
+    console.log('Profile for', email, '— sources:', JSON.stringify(allowedSources), '| department:', department);
+
+    return { allowedSources, department };
 
   } catch (error) {
-    console.error('Error fetching person permissions:', error);
-    return [];
+    console.error('Error fetching user profile:', error);
+    return { allowedSources: [], department: 'equity' };
   } finally {
     if (connection) await connection.end();
   }

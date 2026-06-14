@@ -67,12 +67,15 @@ const schema = a.schema({
   }),
 
 
-  getPersonPermissions: a
+  UserProfile: a.customType({
+    allowedSources: a.string().array(),
+    department:     a.string(),
+  }),
+
+  getUserProfile: a
     .query()
-    .arguments({
-      email: a.string().required(),
-    })
-    .returns(a.string().array())
+    .arguments({ email: a.string().required() })
+    .returns(a.ref('UserProfile'))
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(newsQuery)),
 
