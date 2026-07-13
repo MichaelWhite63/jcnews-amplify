@@ -64,21 +64,16 @@ export const handler = async (event: any) => {
     connectTimeout: 10000,
   };
 
-  // Route to appropriate handler based on arguments
-  if (event.fieldName === 'getCompanyProfile') {
-    return handleGetCompanyProfile(event, dbConfig);
-  } else if (event.fieldName === 'getUserProfile') {
-    return handleGetUserProfile(event, dbConfig);
-  } else if ('industry' in event.arguments) {
-    return handleGetCompaniesByIndustry(event, dbConfig);
-  } else if ('screen' in event.arguments && !('ticker' in event.arguments)) {
-    return handleGetMacroNews(event, dbConfig);
-  } else if ('ticker' in event.arguments && 'screen' in event.arguments) {
-    return handlePublishNewArticle(event);
-  } else if ('publishedDate' in event.arguments) {
-    return handlePublishNewArticle(event);
-  } else {
-    return handleGetTickerNews(event, dbConfig);
+  switch (event.fieldName) {
+    case 'getCompanyProfile':      return handleGetCompanyProfile(event, dbConfig);
+    case 'getUserProfile':         return handleGetUserProfile(event, dbConfig);
+    case 'getCompaniesByIndustry': return handleGetCompaniesByIndustry(event, dbConfig);
+    case 'getMacroNews':           return handleGetMacroNews(event, dbConfig);
+    case 'publishNewArticle':      return handlePublishNewArticle(event);
+    case 'getTickerNews':          return handleGetTickerNews(event, dbConfig);
+    default:
+      console.error('Unknown fieldName:', event.fieldName);
+      throw new Error(`Unknown operation: ${event.fieldName}`);
   }
 };
 

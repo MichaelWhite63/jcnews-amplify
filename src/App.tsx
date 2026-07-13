@@ -62,6 +62,8 @@ interface CompanyTheme {
   status: string
 }
 
+const client = generateClient<Schema>({ authMode: 'iam' })
+
 const VIEW_TO_SCREEN_KEY: Record<string, string> = {
   oil_news:        'oil',
   rates_news:      'rates',
@@ -82,7 +84,6 @@ function getPrevTradeDateCutoff(): Date {
 }
 
 function App() {
-  const client = generateClient<Schema>({ authMode: 'iam' })
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
   const userEmail = params.get('email') || undefined
@@ -456,9 +457,12 @@ function App() {
 
   useEffect(() => {
     if (activeView !== 'db') {
-      fetchMacroNews(activeView)
+      // Wait for permissions to resolve before fetching when a userEmail is present
+      if (!userEmail || allowedSources !== undefined) {
+        fetchMacroNews(activeView)
+      }
     }
-  }, [activeView])
+  }, [activeView, allowedSources])
 
   const toggleIndustryDropdown = () => {
     if (!showIndustryDropdown && industryButtonRef.current) {
