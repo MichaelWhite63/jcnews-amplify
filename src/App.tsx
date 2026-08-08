@@ -3,12 +3,13 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../amplify/data/resource'
 import GeopoliticalRiskDashboard from './components/GeopoliticalRiskDashboard'
 import EIADashboard from './components/EIADashboard'
-import OilPanel from './components/OilPanel'
-import RatesPanel from './components/RatesPanel'
-import FxPanel from './components/FxPanel'
-import InflationPanel from './components/InflationPanel'
-import EmploymentPanel from './components/EmploymentPanel'
-import TradePanel from './components/TradePanel'
+// Macro panels — imports retained for future live data integration
+// import OilPanel from './components/OilPanel'
+// import RatesPanel from './components/RatesPanel'
+// import FxPanel from './components/FxPanel'
+// import InflationPanel from './components/InflationPanel'
+// import EmploymentPanel from './components/EmploymentPanel'
+// import TradePanel from './components/TradePanel'
 import { type DowJonesArticle } from './data/dowJonesData'
 import './App.css'
 
@@ -871,12 +872,14 @@ function App() {
 
         {/* Right Side - Security Panel + Oil Button */}
         <div className="right-column">
+        {/* Macro panels hidden until live data source is available
         {activeView === 'oil_news' ? <OilPanel /> :
          activeView === 'rates_news' ? <RatesPanel /> :
          activeView === 'fx_news' ? <FxPanel /> :
          activeView === 'inflation_news' ? <InflationPanel /> :
          activeView === 'employment_news' ? <EmploymentPanel /> :
          activeView === 'trade_news' ? <TradePanel /> : null}
+        */}
         <aside className="security-panel" style={{ display: activeView === 'db' ? undefined : 'none' }}>
           {department === 'options' && (
             <div className="options-panel-placeholder">
