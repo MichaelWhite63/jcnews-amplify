@@ -895,14 +895,6 @@ function App() {
                     <span className="detail-item-value">{data.security.avgDailyVolume ? parseInt(data.security.avgDailyVolume).toLocaleString() : 'N/A'}</span>
                   </div>
                   <div className="detail-item">
-                    <strong>Short Interest:</strong>
-                    <span className="detail-item-value">{data.security.shortInterest ? parseInt(data.security.shortInterest).toLocaleString() : 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <strong>Short Ratio:</strong>
-                    <span className="detail-item-value">{data.security.shortRatio ? parseFloat(data.security.shortRatio).toFixed(2) : 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
                     <strong>Earnings Date:</strong>
                     <span className="detail-item-value">{data.security.earningsDate ? formatDateOnly(data.security.earningsDate) : 'N/A'}</span>
                   </div>
@@ -916,6 +908,14 @@ function App() {
                       <span className="detail-item-value">${parseFloat(data.security.exDivAmount).toFixed(2)}</span>
                     </div>
                   )}
+                  <div className="detail-item">
+                    <strong>Short Interest:</strong>
+                    <span className="detail-item-value">{data.security.shortInterest ? parseInt(data.security.shortInterest).toLocaleString() : 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <strong>Short Ratio:</strong>
+                    <span className="detail-item-value">{data.security.shortRatio ? parseFloat(data.security.shortRatio).toFixed(2) : 'N/A'}</span>
+                  </div>
                 </div>
 
                 <div className="info-group">
