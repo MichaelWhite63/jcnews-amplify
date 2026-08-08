@@ -1001,7 +1001,7 @@ function App() {
               className="oil-btn"
               onClick={() => setActiveView('db')}
             >
-              {searchTicker} News
+              Equity News
             </button>
           )}
         </div>
