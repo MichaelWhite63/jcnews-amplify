@@ -550,21 +550,6 @@ function App() {
           <button className="theme-toggle" onClick={() => setDarkMode(d => !d)} title="Toggle dark mode">
             {darkMode ? '☀' : '☾'}
           </button>
-          <button
-            className={`profile-toggle-btn${showProfile ? ' active' : ''}`}
-            onClick={() => {
-              if (!showProfile) {
-                if (profileTicker !== searchTicker) {
-                  fetchCompanyProfile(searchTicker)
-                }
-                setShowProfile(true)
-              } else {
-                setShowProfile(false)
-              }
-            }}
-          >
-            {showProfile ? 'News' : 'Risk Profile'}
-          </button>
           {searchHistory.length > 0 && searchHistory.map((historyTicker, index) => (
             <span
               key={index}
