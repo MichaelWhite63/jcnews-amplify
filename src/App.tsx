@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../amplify/data/resource'
-import GeopoliticalRiskDashboard from './components/GeopoliticalRiskDashboard'
-import EIADashboard from './components/EIADashboard'
 // Macro panels — imports retained for future live data integration
 // import OilPanel from './components/OilPanel'
 // import RatesPanel from './components/RatesPanel'
@@ -88,8 +86,6 @@ function App() {
   const [searchTicker, setSearchTicker] = useState(initialTicker)
   const [relatedCompanies, setRelatedCompanies] = useState<RelatedCompany[]>([])
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
-  const [showOilDashboard, setShowOilDashboard] = useState(false)
-  const [showEIADashboard, setShowEIADashboard] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
   const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news'>('db')
@@ -532,22 +528,6 @@ function App() {
       ) : (
         <div className="dj-table-header">
           <h2 className="dj-table-title">{activeView}</h2>
-          {activeView === 'oil_news' && (
-            <div className="dj-dashboard-buttons">
-              <button
-                className={`oil-btn${showOilDashboard ? ' active' : ''}`}
-                onClick={() => setShowOilDashboard(v => !v)}
-              >
-                Global oil supply risk dashboard
-              </button>
-              <button
-                className={`oil-btn${showEIADashboard ? ' active' : ''}`}
-                onClick={() => setShowEIADashboard(v => !v)}
-              >
-                EIA Weekly Dashboard
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -931,22 +911,6 @@ function App() {
         </div>
       </div>
 
-      {showOilDashboard && (
-        <div className="oil-modal-backdrop" onClick={() => setShowOilDashboard(false)}>
-          <div className="oil-modal" onClick={e => e.stopPropagation()}>
-            <button className="oil-modal-close" onClick={() => setShowOilDashboard(false)}>✕</button>
-            <GeopoliticalRiskDashboard />
-          </div>
-        </div>
-      )}
-      {showEIADashboard && (
-        <div className="oil-modal-backdrop" onClick={() => setShowEIADashboard(false)}>
-          <div className="oil-modal" onClick={e => e.stopPropagation()}>
-            <button className="oil-modal-close" onClick={() => setShowEIADashboard(false)}>✕</button>
-            <EIADashboard />
-          </div>
-        </div>
-      )}
     </div>
   )
 }
