@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../amplify/data/resource'
 // Macro panels — imports retained for future live data integration
@@ -93,7 +93,6 @@ function App() {
   const [macroLoading, setMacroLoading] = useState(false)
   const [newArticleIds, setNewArticleIds] = useState<Set<number>>(new Set())
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
-  const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const [allowedSources, setAllowedSources] = useState<string[] | undefined>(undefined)
   const [department, setDepartment] = useState<string>('equity')
@@ -351,7 +350,6 @@ function App() {
     setSelectedArticle(null)
     setActiveView('db')
     setImportanceFilter('All')
-    setCategoryFilter('All')
     clearUnread(tickerValue)
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
@@ -457,14 +455,6 @@ function App() {
       day: 'numeric'
     })
   }
-
-  const availableCategories = useMemo(() => {
-    if (!data?.newsArticles) return []
-    const cats = new Set(
-      data.newsArticles.map(a => a.category?.substring(0, 4)).filter((c): c is string => !!c)
-    )
-    return Array.from(cats).sort()
-  }, [data?.newsArticles])
 
   if (loading) {
     return (
@@ -635,21 +625,6 @@ function App() {
                         </select>
                       </div>
                     </th>
-                    <th>
-                      <div className="th-filter">
-                        <span>Category</span>
-                        <select
-                          value={categoryFilter}
-                          onChange={e => setCategoryFilter(e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <option value="All">All</option>
-                          {availableCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -665,9 +640,6 @@ function App() {
                           const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
                           if (label !== importanceFilter) return false
                         }
-                        if (categoryFilter !== 'All') {
-                          if ((article.category?.substring(0, 4) || '') !== categoryFilter) return false
-                        }
                         return true
                       })
                     return sorted.flatMap((article) => {
@@ -677,7 +649,7 @@ function App() {
                         separatorInserted = true
                         rows.push(
                           <tr key="separator" className="trade-date-separator">
-                            <td colSpan={4}>
+                            <td colSpan={3}>
                               <span>Before 4PM {cutoff.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                             </td>
                           </tr>
@@ -708,13 +680,12 @@ function App() {
                               return <span className={`importance-badge ${cls}`}>{label}</span>
                             })() : '-'}
                           </td>
-                          <td className="category-cell">{article.category ? article.category.substring(0, 4) : '-'}</td>
                         </tr>
                       )
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={4}>
+                            <td colSpan={3}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
