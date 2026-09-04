@@ -582,7 +582,7 @@ function App() {
         <section className="news-table-section">
           {activeView === 'interest_list' ? (
             <div className="news-table-scroll" ref={tableScrollRef}>
-              <div className="news-table">
+              <div className="news-table interest-table">
                 <table>
                   <thead>
                     <tr>
