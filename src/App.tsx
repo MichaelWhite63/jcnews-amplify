@@ -401,6 +401,10 @@ function App() {
     setActiveView('db')
     setImportanceFilter('All')
     clearUnread(tickerValue)
+    if (userEmail) {
+      client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue })
+        .catch(err => console.error('[interest] notifyTickerOfInterest error:', err))
+    }
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
         ticker: tickerValue,
