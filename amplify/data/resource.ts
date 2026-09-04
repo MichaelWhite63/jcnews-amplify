@@ -14,7 +14,8 @@ const schema = a.schema({
       ticker: a.string().required(),
     })
     .returns(a.ref('TickerInterest'))
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
 
   onTickerOfInterest: a
     .subscription()

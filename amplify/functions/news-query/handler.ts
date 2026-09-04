@@ -65,12 +65,13 @@ export const handler = async (event: any) => {
   };
 
   switch (event.fieldName) {
-    case 'getCompanyProfile':      return handleGetCompanyProfile(event, dbConfig);
-    case 'getUserProfile':         return handleGetUserProfile(event, dbConfig);
-    case 'getCompaniesByIndustry': return handleGetCompaniesByIndustry(event, dbConfig);
-    case 'getMacroNews':           return handleGetMacroNews(event, dbConfig);
-    case 'publishNewArticle':      return handlePublishNewArticle(event);
-    case 'getTickerNews':          return handleGetTickerNews(event, dbConfig);
+    case 'getCompanyProfile':        return handleGetCompanyProfile(event, dbConfig);
+    case 'getUserProfile':           return handleGetUserProfile(event, dbConfig);
+    case 'getCompaniesByIndustry':   return handleGetCompaniesByIndustry(event, dbConfig);
+    case 'getMacroNews':             return handleGetMacroNews(event, dbConfig);
+    case 'publishNewArticle':        return handlePublishNewArticle(event);
+    case 'notifyTickerOfInterest':   return handleNotifyTickerOfInterest(event);
+    case 'getTickerNews':            return handleGetTickerNews(event, dbConfig);
     default:
       console.error('Unknown fieldName:', event.fieldName);
       throw new Error(`Unknown operation: ${event.fieldName}`);
@@ -92,6 +93,11 @@ const handlePublishNewArticle = (event: any) => {
     category:      a.category      ?? '',
     screen:        a.screen        ?? '',
   };
+};
+
+const handleNotifyTickerOfInterest = (event: any) => {
+  const { email, ticker } = event.arguments;
+  return { email: email ?? '', ticker: ticker ?? '' };
 };
 
 function normalizeDepartment(name: string | null): string {
