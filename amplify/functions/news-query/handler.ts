@@ -41,7 +41,9 @@ async function resolveDBCredentials(): Promise<void> {
 }
 
 export const handler = async (event: any) => {
-  if (event.typeName === 'Subscription' || event.fieldName === 'onNewArticle') {
+  if (event.typeName === 'Subscription' ||
+      event.fieldName === 'onNewArticle' ||
+      event.fieldName === 'onTickerOfInterest') {
     return null;
   }
 

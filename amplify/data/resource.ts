@@ -20,7 +20,8 @@ const schema = a.schema({
   onTickerOfInterest: a
     .subscription()
     .for(a.ref('notifyTickerOfInterest'))
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(newsQuery)),
 
   NewsArticle: a.customType({
     id: a.integer(),
