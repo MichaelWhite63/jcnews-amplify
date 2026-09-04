@@ -2,6 +2,25 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { newsQuery } from '../functions/news-query/resource';
 
 const schema = a.schema({
+  TickerInterest: a.customType({
+    email:  a.string(),
+    ticker: a.string(),
+  }),
+
+  notifyTickerOfInterest: a
+    .mutation()
+    .arguments({
+      email:  a.string().required(),
+      ticker: a.string().required(),
+    })
+    .returns(a.ref('TickerInterest'))
+    .authorization((allow) => [allow.guest()]),
+
+  onTickerOfInterest: a
+    .subscription()
+    .for(a.ref('notifyTickerOfInterest'))
+    .authorization((allow) => [allow.guest()]),
+
   NewsArticle: a.customType({
     id: a.integer(),
     ticker: a.string(),

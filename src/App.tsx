@@ -88,7 +88,10 @@ function App() {
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
-  const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news'>('db')
+  const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news' | 'interest_list'>('db')
+  const [interestTickers, setInterestTickers] = useState<string[]>([])
+  const [interestFeed, setInterestFeed] = useState<NewsArticle[]>([])
+  const interestTickersRef = useRef<string[]>([])
   const [macroArticles, setMacroArticles] = useState<DowJonesArticle[]>([])
   const [macroLoading, setMacroLoading] = useState(false)
   const [newArticleIds, setNewArticleIds] = useState<Set<number>>(new Set())
@@ -145,6 +148,36 @@ function App() {
   }, [activeView, searchTicker])
 
   useEffect(() => {
+    interestTickersRef.current = interestTickers
+  }, [interestTickers])
+
+  useEffect(() => {
+    if (!userEmail) return
+    let sub: any
+    try {
+      const observable = (client as any).subscriptions?.onTickerOfInterest?.({ email: userEmail })
+      if (!observable) {
+        console.warn('[interest] onTickerOfInterest not available on client.subscriptions')
+        return
+      }
+      sub = observable.subscribe({
+        next: (raw: any) => {
+          const payload = raw?.data?.onTickerOfInterest ?? raw?.onTickerOfInterest ?? raw
+          // Guard: if subscription is unfiltered, check email client-side
+          if (payload?.email && payload.email !== userEmail) return
+          const ticker = payload?.ticker
+          if (!ticker) return
+          setInterestTickers(prev => prev.includes(ticker) ? prev : [...prev, ticker])
+        },
+        error: (err: any) => console.error('[interest] onTickerOfInterest error:', err),
+      })
+    } catch (e) {
+      console.error('[interest] onTickerOfInterest setup error:', e)
+    }
+    return () => sub?.unsubscribe?.()
+  }, [userEmail])
+
+  useEffect(() => {
     let sub: any
     try {
       const observable = (client as any).subscriptions?.onNewArticle?.()
@@ -161,6 +194,23 @@ function App() {
           if (!article || typeof article !== 'object') return
           if (allowedSources !== undefined && article.source &&
               !allowedSources.includes(article.source)) return
+          // Interest list feed — independent of current view
+          if (article.ticker && interestTickersRef.current.includes(article.ticker)) {
+            const newId = article.id ?? Date.now()
+            setInterestFeed(prev => [{
+              id:            newId,
+              ticker:        article.ticker        || '',
+              headline:      article.headline      || '',
+              summary:       article.summary       || '',
+              article:       article.article       || '',
+              publishedDate: article.publishedDate || new Date().toISOString(),
+              source:        article.source        || '',
+              url:           article.url           || '',
+              importance:    article.importance    || '',
+              category:      article.category      || '',
+            }, ...prev])
+          }
+
           const key: string = article.screen || article.ticker
           if (!key) return
           console.log('[sub] key:', key, '| active:', activeScreenKeyRef.current)
@@ -419,7 +469,7 @@ function App() {
   }
 
   useEffect(() => {
-    if (activeView !== 'db') {
+    if (activeView !== 'db' && activeView !== 'interest_list') {
       // Wait for permissions to resolve before fetching when a userEmail is present
       if (!userEmail || allowedSources !== undefined) {
         fetchMacroNews(activeView)
@@ -517,14 +567,50 @@ function App() {
         </div>
       ) : (
         <div className="dj-table-header">
-          <h2 className="dj-table-title">{activeView}</h2>
+          <h2 className="dj-table-title">
+            {activeView === 'interest_list' ? 'Watchlist' : activeView}
+          </h2>
         </div>
       )}
 
       <div className="split-container">
         {/* Left Side - News Table */}
         <section className="news-table-section">
-          {activeView !== 'db' ? (
+          {activeView === 'interest_list' ? (
+            <div className="news-table-scroll" ref={tableScrollRef}>
+              <div className="news-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Ticker</th>
+                      <th>Title</th>
+                      <th>Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {interestFeed.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          No activity yet this session.
+                          {interestTickers.length === 0
+                            ? ' Waiting for ticker-of-interest events…'
+                            : ` Watching: ${interestTickers.join(', ')}`}
+                        </td>
+                      </tr>
+                    ) : interestFeed.map((article) => (
+                      <tr key={article.id} className="article-row">
+                        <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                        <td>{article.ticker}</td>
+                        <td className="headline-cell">{article.headline}</td>
+                        <td className="category-cell">{article.source}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeView !== 'db' ? (
             <>
             <div className="news-table-scroll">
             <div className="news-table">
@@ -859,7 +945,8 @@ function App() {
             ['fx_news',         'fx',         'FX'],
             ['inflation_news',  'inflation',  'INFLATION'],
             ['employment_news', 'employment', 'EMPLOYMENT'],
-            ['trade_news',      'trade',      'TRADE'],
+            ['trade_news',      'trade',        'TRADE'],
+            ['interest_list',   'interest_list','WATCHLIST'],
           ] as [string, string, string][]).map(([view, key, label]) => (
             <button
               key={view}
