@@ -91,6 +91,7 @@ function App() {
   const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news' | 'interest_list'>('db')
   const [interestTickers, setInterestTickers] = useState<string[]>([])
   const [interestFeed, setInterestFeed] = useState<NewsArticle[]>([])
+  const [selectedInterestArticle, setSelectedInterestArticle] = useState<NewsArticle | null>(null)
   const interestTickersRef = useRef<string[]>([])
   const [macroArticles, setMacroArticles] = useState<DowJonesArticle[]>([])
   const [macroLoading, setMacroLoading] = useState(false)
@@ -610,13 +611,73 @@ function App() {
                             : ` Watching: ${interestTickers.join(', ')}`}
                         </td>
                       </tr>
-                    ) : interestFeed.map((article) => (
-                      <tr key={article.id} className="article-row">
-                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
-                        <td>{article.ticker}</td>
-                        <td className="headline-cell">{article.headline}</td>
-                      </tr>
-                    ))}
+                    ) : interestFeed.flatMap((article) => {
+                      const isExpanded = selectedInterestArticle?.id === article.id
+                      const articleText = article.article || article.summary || ''
+                      const hasDetail = articleText.length > 0
+                      const rows = [(
+                        <tr
+                          key={article.id}
+                          className={`article-row${isExpanded ? ' expanded' : ''}`}
+                          onClick={() => hasDetail && setSelectedInterestArticle(prev => prev?.id === article.id ? null : article)}
+                          style={{ cursor: hasDetail ? 'pointer' : 'default' }}
+                        >
+                          <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
+                          <td>{article.ticker}</td>
+                          <td className="headline-cell">
+                            {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
+                            {article.headline}
+                          </td>
+                        </tr>
+                      )]
+                      if (isExpanded) {
+                        rows.push(
+                          <tr key={`${article.id}-detail`} className="accordion-detail-row">
+                            <td colSpan={3}>
+                              <div className="accordion-detail">
+                                <div className="accordion-detail-header">
+                                  <span className="article-summary-meta">
+                                    {article.source} · {formatDateNoYear(article.publishedDate)}
+                                  </span>
+                                  <div className="accordion-detail-buttons">
+                                    <button
+                                      className="article-summary-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const subject = encodeURIComponent(article.headline || 'News Article')
+                                        const bodyParts = [`${article.headline}\n\n${article.article || article.summary || ''}`]
+                                        if (article.url) bodyParts.push(`Read more: ${article.url}`)
+                                        const body = encodeURIComponent(bodyParts.join('\n\n'))
+                                        window.location.href = `mailto:?subject=${subject}&body=${body}`
+                                      }}
+                                    >
+                                      Send Email
+                                    </button>
+                                    {article.url && (
+                                      <button
+                                        className="article-summary-link"
+                                        onClick={(e) => { e.stopPropagation(); openArticle(article.url) }}
+                                      >
+                                        Full Story
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="accordion-detail-text">
+                                  {articleText
+                                    .replace(/\r\n|\r/g, '\n')
+                                    .split('\n')
+                                    .map((line, i) => (
+                                      <span key={i}>{line || ' '}<br /></span>
+                                    ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+                      return rows
+                    })}
                   </tbody>
                 </table>
               </div>
