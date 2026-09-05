@@ -589,13 +589,12 @@ function App() {
                       <th>Date</th>
                       <th>Ticker</th>
                       <th>Title</th>
-                      <th>Source</th>
                     </tr>
                   </thead>
                   <tbody>
                     {interestFeed.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={3} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No activity yet this session.
                           {interestTickers.length === 0
                             ? ' Waiting for ticker-of-interest events…'
@@ -607,7 +606,6 @@ function App() {
                         <td className="date-cell">{formatDate(article.publishedDate)}</td>
                         <td>{article.ticker}</td>
                         <td className="headline-cell">{article.headline}</td>
-                        <td className="category-cell">{article.source}</td>
                       </tr>
                     ))}
                   </tbody>
