@@ -502,6 +502,15 @@ function App() {
     })
   }
 
+  const formatDateNoYear = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   const formatDateOnly = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -603,7 +612,7 @@ function App() {
                       </tr>
                     ) : interestFeed.map((article) => (
                       <tr key={article.id} className="article-row">
-                        <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
                         <td>{article.ticker}</td>
                         <td className="headline-cell">{article.headline}</td>
                       </tr>
