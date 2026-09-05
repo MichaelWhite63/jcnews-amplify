@@ -653,6 +653,16 @@ function App() {
                                     >
                                       Send Email
                                     </button>
+                                    <button
+                                      className="article-summary-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const text = [article.headline, article.article || article.summary || ''].filter(Boolean).join('\n\n')
+                                        navigator.clipboard.writeText(text)
+                                      }}
+                                    >
+                                      Copy
+                                    </button>
                                     {article.url && (
                                       <button
                                         className="article-summary-link"
@@ -738,6 +748,16 @@ function App() {
                                     }}
                                   >
                                     Send Email
+                                  </button>
+                                  <button
+                                    className="article-summary-link"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      const text = [article.headline, article.body].filter(Boolean).join('\n\n')
+                                      navigator.clipboard.writeText(text)
+                                    }}
+                                  >
+                                    Copy
                                   </button>
                                 </div>
                               </div>
@@ -862,6 +882,16 @@ function App() {
                                       }}
                                     >
                                       Send Email
+                                    </button>
+                                    <button
+                                      className="article-summary-link"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const text = [article.headline, article.article || article.summary || ''].filter(Boolean).join('\n\n')
+                                        navigator.clipboard.writeText(text)
+                                      }}
+                                    >
+                                      Copy
                                     </button>
                                     {article.url && (
                                       <button
