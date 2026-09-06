@@ -419,14 +419,7 @@ function App() {
           {
             id: 1,
             ticker: 'ZXYZ US',
-            headline: '300 September E-mini S&P 500 (ES) 4500 calls',
-            summary: '', article: '', publishedDate: new Date().toISOString(),
-            source: '', url: '', importance: '', category: '',
-          },
-          {
-            id: 2,
-            ticker: 'ZXYZ US',
-            headline: '48 ZXYZ 500 futures contracts',
+            headline: '300 September ZXYZ 58.5 4500 calls\n20,000 ZXYZ 59.75 NYSE',
             summary: '', article: '', publishedDate: new Date().toISOString(),
             source: '', url: '', importance: '', category: '',
           },
@@ -875,7 +868,7 @@ function App() {
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
                           <td className="date-cell">{formatDate(article.publishedDate)}</td>
-                          <td className="headline-cell">
+                          <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                           </td>
