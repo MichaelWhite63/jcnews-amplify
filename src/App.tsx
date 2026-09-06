@@ -403,6 +403,7 @@ function App() {
     setSelectedArticle(null)
     setActiveView('db')
     setImportanceFilter('All')
+    setZxyzTypeFilter('Both')
     clearUnread(tickerValue)
     if (userEmail) {
       client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue })
@@ -898,7 +899,7 @@ function App() {
                         separatorInserted = true
                         rows.push(
                           <tr key="separator" className="trade-date-separator">
-                            <td colSpan={3}>
+                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
                               <span>Before 4PM {cutoff.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                             </td>
                           </tr>
@@ -917,7 +918,7 @@ function App() {
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
                           <td className="date-cell">{formatDate(article.publishedDate)}</td>
-                          <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line' } : undefined}>
+                          <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                           </td>
