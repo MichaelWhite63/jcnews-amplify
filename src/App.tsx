@@ -406,6 +406,35 @@ function App() {
       client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue })
         .catch(err => console.error('[interest] notifyTickerOfInterest error:', err))
     }
+    // Demo: hardcoded data for ZXYZ US
+    if (tickerValue === 'ZXYZ US') {
+      setData({
+        security: {
+          ticker: 'ZXYZ US', companyName: 'ZXYZ', sector: '', industry: '',
+          exchange: '', earningsDate: '', exDivDate: '', exDivAmount: '',
+          shortInterest: '', shortRatio: '', primaryExchange: '', avgDailyVolume: '',
+          cusip: '', isin: '', indexes: '',
+        },
+        newsArticles: [
+          {
+            id: 1,
+            ticker: 'ZXYZ US',
+            headline: '300 September E-mini S&P 500 (ES) 4500 calls',
+            summary: '', article: '', publishedDate: new Date().toISOString(),
+            source: '', url: '', importance: '', category: '',
+          },
+          {
+            id: 2,
+            ticker: 'ZXYZ US',
+            headline: '48 ZXYZ 500 futures contracts',
+            summary: '', article: '', publishedDate: new Date().toISOString(),
+            source: '', url: '', importance: '', category: '',
+          },
+        ],
+      })
+      setLoading(false)
+      return
+    }
     try {
       const { data: result, errors } = await client.queries.getTickerNews({
         ticker: tickerValue,
