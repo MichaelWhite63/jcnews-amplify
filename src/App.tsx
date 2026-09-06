@@ -921,16 +921,30 @@ function App() {
                             {article.headline}
                           </td>
                           <td className="importance-cell">
-                            {data.security?.ticker === 'ZXYZ US' ? (
-                              article.category
-                                ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
-                                : '-'
-                            ) : article.importance ? (() => {
-                              const n = Number(article.importance)
-                              const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
-                              const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
-                              return <span className={`importance-badge ${cls}`}>{label}</span>
-                            })() : '-'}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                              <span>
+                                {data.security?.ticker === 'ZXYZ US' ? (
+                                  article.category
+                                    ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
+                                    : '-'
+                                ) : article.importance ? (() => {
+                                  const n = Number(article.importance)
+                                  const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
+                                  const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
+                                  return <span className={`importance-badge ${cls}`}>{label}</span>
+                                })() : '-'}
+                              </span>
+                              <button
+                                className="row-copy-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const text = [formatDate(article.publishedDate), article.ticker, article.headline].filter(Boolean).join(' | ')
+                                  navigator.clipboard.writeText(text)
+                                }}
+                              >
+                                Copy
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )

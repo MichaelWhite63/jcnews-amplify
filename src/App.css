@@ -362,6 +362,25 @@
   background-color: rgba(99, 102, 241, 0.2);
 }
 
+.row-copy-btn {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 600;
+  background-color: var(--accent-dim);
+  color: var(--accent-hover);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.row-copy-btn:hover {
+  background-color: rgba(99, 102, 241, 0.2);
+}
+
 .category-cell {
   font-size: 0.72rem;
   font-weight: 700;
