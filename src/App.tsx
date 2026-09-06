@@ -839,7 +839,7 @@ function App() {
                   <tr>
                     <th>Date</th>
                     <th>Title</th>
-                    <th className="copy-col-header"></th>
+                    {data.security?.ticker === 'ZXYZ US' && <th className="copy-col-header"></th>}
                     <th>
                       <div className="th-filter">
                         {data.security?.ticker === 'ZXYZ US' ? (
@@ -921,18 +921,20 @@ function App() {
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                           </td>
-                          <td className="copy-col-cell">
-                            <button
-                              className="row-copy-btn"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                const text = [formatDate(article.publishedDate), article.ticker, article.headline].filter(Boolean).join(' | ')
-                                navigator.clipboard.writeText(text)
-                              }}
-                            >
-                              Copy
-                            </button>
-                          </td>
+                          {data.security?.ticker === 'ZXYZ US' && (
+                            <td className="copy-col-cell">
+                              <button
+                                className="row-copy-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const text = [formatDate(article.publishedDate), article.ticker, article.headline].filter(Boolean).join(' | ')
+                                  navigator.clipboard.writeText(text)
+                                }}
+                              >
+                                Copy
+                              </button>
+                            </td>
+                          )}
                           <td className="importance-cell">
                             {data.security?.ticker === 'ZXYZ US' ? (
                               article.category
@@ -950,7 +952,7 @@ function App() {
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={4}>
+                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
