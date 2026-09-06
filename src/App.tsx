@@ -9,6 +9,7 @@ import type { Schema } from '../amplify/data/resource'
 // import EmploymentPanel from './components/EmploymentPanel'
 // import TradePanel from './components/TradePanel'
 import { type DowJonesArticle } from './data/dowJonesData'
+import TradeAlertLite from './components/TradeAlertLite'
 import './App.css'
 
 interface NewsArticle {
@@ -88,7 +89,7 @@ function App() {
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
-  const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news' | 'interest_list'>('db')
+  const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news' | 'interest_list' | 'trade_alert_lite'>('db')
   const [interestTickers, setInterestTickers] = useState<string[]>([])
   const [interestFeed, setInterestFeed] = useState<NewsArticle[]>([])
   const [selectedInterestArticle, setSelectedInterestArticle] = useState<NewsArticle | null>(null)
@@ -510,7 +511,7 @@ function App() {
   }
 
   useEffect(() => {
-    if (activeView !== 'db' && activeView !== 'interest_list') {
+    if (activeView !== 'db' && activeView !== 'interest_list' && activeView !== 'trade_alert_lite') {
       // Wait for permissions to resolve before fetching when a userEmail is present
       if (!userEmail || allowedSources !== undefined) {
         fetchMacroNews(activeView)
@@ -618,7 +619,9 @@ function App() {
       ) : (
         <div className="dj-table-header">
           <h2 className="dj-table-title">
-            {activeView === 'interest_list' ? 'Watchlist' : activeView}
+            {activeView === 'interest_list' ? 'Watchlist'
+              : activeView === 'trade_alert_lite' ? 'Trade Alert Lite'
+              : activeView}
           </h2>
         </div>
       )}
@@ -626,7 +629,11 @@ function App() {
       <div className="split-container">
         {/* Left Side - News Table */}
         <section className="news-table-section">
-          {activeView === 'interest_list' ? (
+          {activeView === 'trade_alert_lite' ? (
+            <div className="news-table-scroll" ref={tableScrollRef}>
+              <TradeAlertLite />
+            </div>
+          ) : activeView === 'interest_list' ? (
             <div className="news-table-scroll" ref={tableScrollRef}>
               <div className="news-table interest-table">
                 <table>
@@ -1084,7 +1091,8 @@ function App() {
             ['inflation_news',  'inflation',  'INFLATION'],
             ['employment_news', 'employment', 'EMPLOYMENT'],
             ['trade_news',      'trade',        'TRADE'],
-            ['interest_list',   'interest_list','WATCHLIST'],
+            ['interest_list',    'interest_list',   'WATCHLIST'],
+            ['trade_alert_lite', 'trade_alert_lite', 'TRADE ALERT LITE'],
           ] as [string, string, string][]).map(([view, key, label]) => (
             <button
               key={view}
