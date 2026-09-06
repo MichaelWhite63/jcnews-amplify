@@ -1053,56 +1053,71 @@ function App() {
                 </div>
 
                 <div className="info-group">
-                  <h4>Company Info</h4>
-                  <div className="detail-item">
-                    <strong>Sector:</strong>
-                    <span className="detail-item-value">{data.security.sector || 'N/A'}</span>
-                  </div>
-                  <div className="industry-selector">
-                    <strong>Industry:</strong>
-                    <span className="industry-value">
-                      <span className="detail-item-value">{data.security.industry || 'N/A'}</span>
-                      {relatedCompanies.length > 0 && (
-                        <button
-                          ref={industryButtonRef}
-                          className="industry-dropdown-btn"
-                          onClick={toggleIndustryDropdown}
-                          title="View related companies"
-                        >
-                          ▼
-                        </button>
-                      )}
-                    </span>
-                    {showIndustryDropdown && relatedCompanies.length > 0 && (
-                      <div
-                        className="industry-dropdown"
-                        style={{
-                          top: `${dropdownPosition.top}px`,
-                          left: `${dropdownPosition.left}px`
-                        }}
-                      >
-                        <div className="industry-dropdown-header">
-                          Related Companies ({relatedCompanies.length})
-                        </div>
-                        <div className="industry-dropdown-list">
-                          {relatedCompanies.map((company) => (
-                            <div
-                              key={company.ticker}
-                              className="industry-dropdown-item"
-                              onClick={() => selectCompany(company.ticker)}
-                            >
-                              <span className="dropdown-name">{company.companyName}</span>
-                            </div>
-                          ))}
-                        </div>
+                  {data.security.ticker === 'ZXYZ US' ? (
+                    <>
+                      <div className="detail-item">
+                        <strong>Ex-Dividend Date:</strong>
+                        <span className="detail-item-value">September 15</span>
                       </div>
-                    )}
-                  </div>
-                  {data.security.primaryExchange && (
-                    <div className="detail-item">
-                      <strong>Primary Exchange:</strong>
-                      <span className="detail-item-value">{data.security.primaryExchange}</span>
-                    </div>
+                      <div className="detail-item">
+                        <strong>Earnings Date:</strong>
+                        <span className="detail-item-value">September 26</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h4>Company Info</h4>
+                      <div className="detail-item">
+                        <strong>Sector:</strong>
+                        <span className="detail-item-value">{data.security.sector || 'N/A'}</span>
+                      </div>
+                      <div className="industry-selector">
+                        <strong>Industry:</strong>
+                        <span className="industry-value">
+                          <span className="detail-item-value">{data.security.industry || 'N/A'}</span>
+                          {relatedCompanies.length > 0 && (
+                            <button
+                              ref={industryButtonRef}
+                              className="industry-dropdown-btn"
+                              onClick={toggleIndustryDropdown}
+                              title="View related companies"
+                            >
+                              ▼
+                            </button>
+                          )}
+                        </span>
+                        {showIndustryDropdown && relatedCompanies.length > 0 && (
+                          <div
+                            className="industry-dropdown"
+                            style={{
+                              top: `${dropdownPosition.top}px`,
+                              left: `${dropdownPosition.left}px`
+                            }}
+                          >
+                            <div className="industry-dropdown-header">
+                              Related Companies ({relatedCompanies.length})
+                            </div>
+                            <div className="industry-dropdown-list">
+                              {relatedCompanies.map((company) => (
+                                <div
+                                  key={company.ticker}
+                                  className="industry-dropdown-item"
+                                  onClick={() => selectCompany(company.ticker)}
+                                >
+                                  <span className="dropdown-name">{company.companyName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {data.security.primaryExchange && (
+                        <div className="detail-item">
+                          <strong>Primary Exchange:</strong>
+                          <span className="detail-item-value">{data.security.primaryExchange}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
