@@ -1001,33 +1001,55 @@ function App() {
               <h2>{data.security.companyName}</h2>
               <div className="security-info-grid">
                 <div className="info-group">
-                  <h4>Trading Info</h4>
-                  <div className="detail-item">
-                    <strong>Avg Daily Volume:</strong>
-                    <span className="detail-item-value">{data.security.avgDailyVolume ? parseInt(data.security.avgDailyVolume).toLocaleString() : 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <strong>Earnings Date:</strong>
-                    <span className="detail-item-value">{data.security.earningsDate ? formatDateOnly(data.security.earningsDate) : 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <strong>Ex-Div Date:</strong>
-                    <span className="detail-item-value">{data.security.exDivDate ? formatDateOnly(data.security.exDivDate) : 'N/A'}</span>
-                  </div>
-                  {data.security.exDivAmount && (
-                    <div className="detail-item">
-                      <strong>Div Amount:</strong>
-                      <span className="detail-item-value">${parseFloat(data.security.exDivAmount).toFixed(2)}</span>
-                    </div>
+                  {data.security.ticker === 'ZXYZ US' ? (
+                    <>
+                      <h4>Depth of Book</h4>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.855rem' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ padding: '0.3rem 0.5rem 0.3rem 0' }}><strong>Inside Bid</strong></td>
+                            <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right' }}>58.25</td>
+                            <td style={{ padding: '0.3rem 0 0.3rem 0.5rem', textAlign: 'right' }}>200</td>
+                          </tr>
+                          <tr>
+                            <td style={{ padding: '0.3rem 0.5rem 0.3rem 0' }}><strong>Inside Offer</strong></td>
+                            <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right' }}>59.01</td>
+                            <td style={{ padding: '0.3rem 0 0.3rem 0.5rem', textAlign: 'right' }}>5,000</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </>
+                  ) : (
+                    <>
+                      <h4>Trading Info</h4>
+                      <div className="detail-item">
+                        <strong>Avg Daily Volume:</strong>
+                        <span className="detail-item-value">{data.security.avgDailyVolume ? parseInt(data.security.avgDailyVolume).toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <strong>Earnings Date:</strong>
+                        <span className="detail-item-value">{data.security.earningsDate ? formatDateOnly(data.security.earningsDate) : 'N/A'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <strong>Ex-Div Date:</strong>
+                        <span className="detail-item-value">{data.security.exDivDate ? formatDateOnly(data.security.exDivDate) : 'N/A'}</span>
+                      </div>
+                      {data.security.exDivAmount && (
+                        <div className="detail-item">
+                          <strong>Div Amount:</strong>
+                          <span className="detail-item-value">${parseFloat(data.security.exDivAmount).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="detail-item">
+                        <strong>Short Interest:</strong>
+                        <span className="detail-item-value">{data.security.shortInterest ? parseInt(data.security.shortInterest).toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <strong>Short Ratio:</strong>
+                        <span className="detail-item-value">{data.security.shortRatio ? parseFloat(data.security.shortRatio).toFixed(2) : 'N/A'}</span>
+                      </div>
+                    </>
                   )}
-                  <div className="detail-item">
-                    <strong>Short Interest:</strong>
-                    <span className="detail-item-value">{data.security.shortInterest ? parseInt(data.security.shortInterest).toLocaleString() : 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <strong>Short Ratio:</strong>
-                    <span className="detail-item-value">{data.security.shortRatio ? parseFloat(data.security.shortRatio).toFixed(2) : 'N/A'}</span>
-                  </div>
                 </div>
 
                 <div className="info-group">
