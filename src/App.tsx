@@ -423,6 +423,13 @@ function App() {
             summary: '', article: '', publishedDate: new Date().toISOString(),
             source: '', url: '', importance: '', category: '',
           },
+          {
+            id: 2,
+            ticker: 'ZXYZ US',
+            headline: '450 October ZXYZ 65.25 Puts\n30,000 ZXYZ 63.75 ARCA',
+            summary: '', article: '', publishedDate: new Date().toISOString(),
+            source: '', url: '', importance: '', category: '',
+          },
         ],
       })
       setLoading(false)
