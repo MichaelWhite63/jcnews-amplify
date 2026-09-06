@@ -98,6 +98,7 @@ function App() {
   const [macroLoading, setMacroLoading] = useState(false)
   const [newArticleIds, setNewArticleIds] = useState<Set<number>>(new Set())
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
+  const [zxyzTypeFilter, setZxyzTypeFilter] = useState<string>('Both')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const [allowedSources, setAllowedSources] = useState<string[] | undefined>(undefined)
   const [department, setDepartment] = useState<string>('equity')
@@ -422,28 +423,28 @@ function App() {
             ticker: 'ZXYZ US',
             headline: '300 September ZXYZ 58.5 4500 calls\n20,000 ZXYZ 59.75 NYSE',
             summary: '', article: '', publishedDate: new Date().toISOString(),
-            source: '', url: '', importance: '', category: '',
+            source: '', url: '', importance: '', category: 'Trades',
           },
           {
             id: 2,
             ticker: 'ZXYZ US',
             headline: '450 October ZXYZ 65.25 Puts\n30,000 ZXYZ 63.75 ARCA',
             summary: '', article: '', publishedDate: new Date().toISOString(),
-            source: '', url: '', importance: '', category: '',
+            source: '', url: '', importance: '', category: 'Trades',
           },
           {
             id: 3,
             ticker: 'ZXYZ US',
             headline: '100 October ZXYZ 55.25 calls\n15,000 ZXYZ 54.25 NYSE',
             summary: '', article: '', publishedDate: new Date().toISOString(),
-            source: '', url: '', importance: '', category: '',
+            source: '', url: '', importance: '', category: 'Trades',
           },
           {
             id: 4,
             ticker: 'ZXYZ US',
             headline: 'ZXYZ release earnings after the close. Expectation is for doubling revenue',
             summary: '', article: '', publishedDate: new Date().toISOString(),
-            source: 'Dow Jones', url: '', importance: '3', category: '',
+            source: 'Dow Jones', url: '', importance: '3', category: 'News',
           },
         ],
       })
@@ -840,17 +841,34 @@ function App() {
                     <th>Title</th>
                     <th>
                       <div className="th-filter">
-                        <span>Importance</span>
-                        <select
-                          value={importanceFilter}
-                          onChange={e => setImportanceFilter(e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <option value="All">All</option>
-                          <option value="High">High</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Low">Low</option>
-                        </select>
+                        {data.security.ticker === 'ZXYZ US' ? (
+                          <>
+                            <span>Type</span>
+                            <select
+                              value={zxyzTypeFilter}
+                              onChange={e => setZxyzTypeFilter(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <option value="Both">Both</option>
+                              <option value="News">News</option>
+                              <option value="Trades">Trades</option>
+                            </select>
+                          </>
+                        ) : (
+                          <>
+                            <span>Importance</span>
+                            <select
+                              value={importanceFilter}
+                              onChange={e => setImportanceFilter(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <option value="All">All</option>
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                            </select>
+                          </>
+                        )}
                       </div>
                     </th>
                   </tr>
@@ -862,7 +880,9 @@ function App() {
                     const sorted = [...data.newsArticles]
                       .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())
                       .filter(article => {
-                        if (importanceFilter !== 'All') {
+                        if (data.security.ticker === 'ZXYZ US') {
+                          if (zxyzTypeFilter !== 'Both' && article.category !== zxyzTypeFilter) return false
+                        } else if (importanceFilter !== 'All') {
                           if (!article.importance) return false
                           const n = Number(article.importance)
                           const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
@@ -901,7 +921,11 @@ function App() {
                             {article.headline}
                           </td>
                           <td className="importance-cell">
-                            {article.importance ? (() => {
+                            {data.security.ticker === 'ZXYZ US' ? (
+                              article.category
+                                ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
+                                : '-'
+                            ) : article.importance ? (() => {
                               const n = Number(article.importance)
                               const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
                               const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
