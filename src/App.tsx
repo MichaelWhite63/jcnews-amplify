@@ -438,6 +438,13 @@ function App() {
             summary: '', article: '', publishedDate: new Date().toISOString(),
             source: '', url: '', importance: '', category: '',
           },
+          {
+            id: 4,
+            ticker: 'ZXYZ US',
+            headline: 'ZXYZ release earnings after the close. Expectation is for doubling revenue',
+            summary: '', article: '', publishedDate: new Date().toISOString(),
+            source: 'Dow Jones', url: '', importance: '3', category: '',
+          },
         ],
       })
       setLoading(false)
