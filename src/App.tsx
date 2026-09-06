@@ -1060,6 +1060,10 @@ function App() {
                         <span className="detail-item-value">September 15</span>
                       </div>
                       <div className="detail-item">
+                        <strong>Dividend Amount:</strong>
+                        <span className="detail-item-value">.50</span>
+                      </div>
+                      <div className="detail-item">
                         <strong>Earnings Date:</strong>
                         <span className="detail-item-value">September 26</span>
                       </div>
