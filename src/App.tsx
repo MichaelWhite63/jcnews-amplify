@@ -1099,7 +1099,7 @@ function App() {
             ['employment_news', 'employment', 'EMPLOYMENT'],
             ['trade_news',      'trade',        'TRADE'],
             ['interest_list',    'interest_list',   'WATCHLIST'],
-            ['trade_alert_lite', 'trade_alert_lite', 'TRADE ALERT LITE'],
+            ['trade_alert_lite', 'trade_alert_lite', 'TRADE ALERT DEMO'],
           ] as [string, string, string][]).map(([view, key, label]) => (
             <button
               key={view}
