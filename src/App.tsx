@@ -841,7 +841,7 @@ function App() {
                     <th>Title</th>
                     <th>
                       <div className="th-filter">
-                        {data.security.ticker === 'ZXYZ US' ? (
+                        {data.security?.ticker === 'ZXYZ US' ? (
                           <>
                             <span>Type</span>
                             <select
@@ -880,7 +880,7 @@ function App() {
                     const sorted = [...data.newsArticles]
                       .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())
                       .filter(article => {
-                        if (data.security.ticker === 'ZXYZ US') {
+                        if (data.security?.ticker === 'ZXYZ US') {
                           if (zxyzTypeFilter !== 'Both' && article.category !== zxyzTypeFilter) return false
                         } else if (importanceFilter !== 'All') {
                           if (!article.importance) return false
@@ -921,7 +921,7 @@ function App() {
                             {article.headline}
                           </td>
                           <td className="importance-cell">
-                            {data.security.ticker === 'ZXYZ US' ? (
+                            {data.security?.ticker === 'ZXYZ US' ? (
                               article.category
                                 ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
                                 : '-'
