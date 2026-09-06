@@ -839,6 +839,7 @@ function App() {
                   <tr>
                     <th>Date</th>
                     <th>Title</th>
+                    <th className="copy-col-header"></th>
                     <th>
                       <div className="th-filter">
                         {data.security?.ticker === 'ZXYZ US' ? (
@@ -920,38 +921,36 @@ function App() {
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                           </td>
+                          <td className="copy-col-cell">
+                            <button
+                              className="row-copy-btn"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const text = [formatDate(article.publishedDate), article.ticker, article.headline].filter(Boolean).join(' | ')
+                                navigator.clipboard.writeText(text)
+                              }}
+                            >
+                              Copy
+                            </button>
+                          </td>
                           <td className="importance-cell">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                              <span>
-                                {data.security?.ticker === 'ZXYZ US' ? (
-                                  article.category
-                                    ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
-                                    : '-'
-                                ) : article.importance ? (() => {
-                                  const n = Number(article.importance)
-                                  const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
-                                  const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
-                                  return <span className={`importance-badge ${cls}`}>{label}</span>
-                                })() : '-'}
-                              </span>
-                              <button
-                                className="row-copy-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const text = [formatDate(article.publishedDate), article.ticker, article.headline].filter(Boolean).join(' | ')
-                                  navigator.clipboard.writeText(text)
-                                }}
-                              >
-                                Copy
-                              </button>
-                            </div>
+                            {data.security?.ticker === 'ZXYZ US' ? (
+                              article.category
+                                ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
+                                : '-'
+                            ) : article.importance ? (() => {
+                              const n = Number(article.importance)
+                              const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
+                              const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
+                              return <span className={`importance-badge ${cls}`}>{label}</span>
+                            })() : '-'}
                           </td>
                         </tr>
                       )
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={3}>
+                            <td colSpan={4}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">

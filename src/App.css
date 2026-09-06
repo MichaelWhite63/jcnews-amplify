@@ -362,6 +362,23 @@
   background-color: rgba(99, 102, 241, 0.2);
 }
 
+.copy-col-header {
+  width: 1px;
+  padding: 0;
+  border-left: none !important;
+}
+
+.copy-col-cell {
+  width: 1px;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  white-space: nowrap;
+  border-left: none !important;
+}
+
+td.headline-cell {
+  border-right: none !important;
+}
+
 .row-copy-btn {
   padding: 0.15rem 0.5rem;
   font-size: 0.7rem;
@@ -374,7 +391,6 @@
   cursor: pointer;
   transition: background-color 0.15s;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .row-copy-btn:hover {
