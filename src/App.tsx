@@ -340,6 +340,31 @@ function App() {
           sources = []
           setAllowedSources([])
         }
+
+        // Pre-populate interestTickers from Valkey (covers tickers sent before this tab opened)
+        try {
+          const { data: valkeyTickers } = await client.queries.getTickersOfInterest({ email: userEmail })
+          const fromValkey = (valkeyTickers ?? []).filter(Boolean) as string[]
+          if (fromValkey.length > 0) {
+            setInterestTickers(prev => {
+              const merged = [...new Set([...prev, ...fromValkey])]
+              // Refresh localStorage entries for Valkey tickers so their 72h window is current
+              try {
+                const stored: { ticker: string; ts: number }[] =
+                  JSON.parse(localStorage.getItem('interestTickers') || '[]')
+                const now = Date.now()
+                const updated = [
+                  ...stored.filter(e => !fromValkey.includes(e.ticker)),
+                  ...fromValkey.map(t => ({ ticker: t, ts: now })),
+                ]
+                localStorage.setItem('interestTickers', JSON.stringify(updated))
+              } catch {}
+              return merged
+            })
+          }
+        } catch (err) {
+          console.error('[interest] getTickersOfInterest error:', err)
+        }
       }
       fetchTickerNews(undefined, sources)
     }

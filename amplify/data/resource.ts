@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { newsQuery } from '../functions/news-query/resource';
+import { valkeyQuery } from '../functions/valkey-query/resource';
 
 const schema = a.schema({
   TickerInterest: a.customType({
@@ -166,6 +167,13 @@ const schema = a.schema({
     .for(a.ref('publishNewArticle'))
     .authorization((allow) => [allow.guest()])
     .handler(a.handler.function(newsQuery)),
+
+  getTickersOfInterest: a
+    .query()
+    .arguments({ email: a.string().required() })
+    .returns(a.string().array())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(valkeyQuery)),
 });
 
 export type Schema = ClientSchema<typeof schema>;
