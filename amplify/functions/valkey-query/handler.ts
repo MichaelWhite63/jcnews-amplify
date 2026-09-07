@@ -1,21 +1,20 @@
-import Redis from 'ioredis';
+import { Cluster } from 'ioredis';
 
 const VALKEY_HOST = 'clustercfg.nodebasedin4mvalkeycache.q2icyp.use2.cache.amazonaws.com';
 const VALKEY_PORT = 6379;
 
 // Reuse cluster connection across warm Lambda invocations
-let cluster: Redis.Cluster | null = null;
+let cluster: Cluster | null = null;
 
-function getCluster(): Redis.Cluster {
+function getCluster(): Cluster {
   if (!cluster) {
-    cluster = new Redis.Cluster(
+    cluster = new Cluster(
       [{ host: VALKEY_HOST, port: VALKEY_PORT }],
       {
         redisOptions: {
           tls: { rejectUnauthorized: false },
           enableReadyCheck: true,
           maxRetriesPerRequest: 3,
-          retryStrategy: (times) => Math.min(times * 100, 2000),
         },
         dnsLookup: (address, callback) => callback(null, address),
       }
