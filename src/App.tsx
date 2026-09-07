@@ -90,7 +90,15 @@ function App() {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null)
   const [selectedDjArticle, setSelectedDjArticle] = useState<DowJonesArticle | null>(null)
   const [activeView, setActiveView] = useState<'db' | 'oil_news' | 'rates_news' | 'fx_news' | 'inflation_news' | 'employment_news' | 'trade_news' | 'interest_list' | 'trade_alert_lite'>('db')
-  const [interestTickers, setInterestTickers] = useState<string[]>([])
+  const [interestTickers, setInterestTickers] = useState<string[]>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('interestTickers') || '[]')
+      const cutoff = Date.now() - 72 * 60 * 60 * 1000
+      return stored
+        .filter((e: { ticker: string; ts: number }) => e.ts > cutoff)
+        .map((e: { ticker: string; ts: number }) => e.ticker)
+    } catch { return [] }
+  })
   const [interestFeed, setInterestFeed] = useState<NewsArticle[]>([])
   const [selectedInterestArticle, setSelectedInterestArticle] = useState<NewsArticle | null>(null)
   const interestTickersRef = useRef<string[]>([])
@@ -170,7 +178,16 @@ function App() {
           if (payload?.email && payload.email !== userEmail) return
           const ticker = payload?.ticker
           if (!ticker) return
-          setInterestTickers(prev => prev.includes(ticker) ? prev : [...prev, ticker])
+          setInterestTickers(prev => {
+            if (prev.includes(ticker)) return prev
+            try {
+              const stored: { ticker: string; ts: number }[] =
+                JSON.parse(localStorage.getItem('interestTickers') || '[]')
+              const filtered = stored.filter(e => e.ticker !== ticker)
+              localStorage.setItem('interestTickers', JSON.stringify([...filtered, { ticker, ts: Date.now() }]))
+            } catch {}
+            return [...prev, ticker]
+          })
         },
         error: (err: any) => console.error('[interest] onTickerOfInterest error:', err),
       })
