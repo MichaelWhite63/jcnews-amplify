@@ -30,7 +30,7 @@ const stack = valkeyLambda.stack;
 // After deploy, add a matching inbound rule on the Valkey cluster's security group
 // allowing TCP 6379 from this security group's ID.
 const lambdaSG = new CfnSecurityGroup(stack, 'ValkeyQueryLambdaSG', {
-  groupDescription: 'valkeyQuery Lambda — outbound to Valkey port 6379',
+  groupDescription: 'valkeyQuery Lambda - outbound to Valkey port 6379',
   vpcId: 'vpc-023f30cf6c642dc59',
   securityGroupEgress: [
     {
