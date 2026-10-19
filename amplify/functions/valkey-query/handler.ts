@@ -1,4 +1,5 @@
 import { Cluster } from 'ioredis';
+import { sessionIdentity } from '../access-shared/identity';
 
 const VALKEY_HOST = 'clustercfg.nodebasedin4mvalkeycache.q2icyp.use2.cache.amazonaws.com';
 const VALKEY_PORT = 6379;
@@ -25,7 +26,8 @@ function getCluster(): Cluster {
 }
 
 export const handler = async (event: any): Promise<string[]> => {
-  const email = event.arguments?.email;
+  // Browser sessions: use the verified email from the Lambda authorizer, not the argument.
+  const email = sessionIdentity(event)?.email ?? event.arguments?.email;
   if (!email) return [];
 
   try {

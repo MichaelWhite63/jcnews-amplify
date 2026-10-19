@@ -31,3 +31,4 @@ amplify/amplify_outputs.json
 .env
 .env.local
 .env.production
+local-dev/access.env

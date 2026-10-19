@@ -1,0 +1,13 @@
+# Amplify Hosting custom response headers (applied on deploy of this branch).
+# NOTE: if headers are also configured in the Amplify console, this file takes precedence.
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: Referrer-Policy
+        value: no-referrer              # never leak ?token= to third-party sites (article links, CDNs)
+      - key: X-Content-Type-Options
+        value: nosniff
+      - key: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - key: X-Frame-Options
+        value: DENY

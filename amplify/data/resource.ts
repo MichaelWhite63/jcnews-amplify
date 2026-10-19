@@ -1,8 +1,38 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 import { newsQuery } from '../functions/news-query/resource';
 import { valkeyQuery } from '../functions/valkey-query/resource';
+import { accessExchange } from '../functions/access-exchange/resource';
+import { accessAuthorizer } from '../functions/access-authorizer/resource';
+import { parseDuration } from '../functions/access-shared/config';
+
+/**
+ * Phase 1 (browser UI access): reader operations accept BOTH the legacy guest IAM mode
+ * and the new Lambda-authorizer session ('custom'). The UI now only uses 'custom'.
+ * Phase 2 removes allow.guest() from reader ops (see docs/access/ARCHITECTURE.md).
+ */
 
 const schema = a.schema({
+  // ── Browser access (phase 1) ───────────────────────────────────────────────
+  AccessSession: a.customType({
+    status:             a.string().required(),   // 'ok' | 'invalid'
+    session:            a.string(),               // HS256 JWT, send as authToken (authMode 'lambda')
+    sessionExpiresAt:   a.integer(),              // epoch seconds
+    email:              a.string(),
+    allowedSources:     a.string().array(),
+    department:         a.string(),
+    linkToken:          a.string(),               // set only when the link token was rotated
+    linkTokenExpiresAt: a.integer(),              // epoch seconds
+    rotated:            a.boolean(),
+  }),
+
+  // Pre-login: callable with guest IAM credentials; rate limited by WAF (backend.ts).
+  exchangeToken: a
+    .mutation()
+    .arguments({ token: a.string().required() })
+    .returns(a.ref('AccessSession'))
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(accessExchange)),
+
   TickerInterest: a.customType({
     email:  a.string(),
     ticker: a.string(),
@@ -15,13 +45,13 @@ const schema = a.schema({
       ticker: a.string().required(),
     })
     .returns(a.ref('TickerInterest'))
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   onTickerOfInterest: a
     .subscription()
     .for(a.ref('notifyTickerOfInterest'))
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   NewsArticle: a.customType({
@@ -98,7 +128,7 @@ const schema = a.schema({
     .query()
     .arguments({ email: a.string().required() })
     .returns(a.ref('UserProfile'))
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   getTickerNews: a
@@ -109,7 +139,7 @@ const schema = a.schema({
       allowedSources: a.string().array(),
     })
     .returns(a.ref('TickerNewsData'))
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(
       a.handler.function(newsQuery)
     ),
@@ -120,7 +150,7 @@ const schema = a.schema({
       industry: a.string().required(),
     })
     .returns(a.ref('RelatedCompany').array())
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(
       a.handler.function(newsQuery)
     ),
@@ -133,14 +163,14 @@ const schema = a.schema({
       allowedSources: a.string().array(),
     })
     .returns(a.ref('MacroNewsArticle').array())
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   getCompanyProfile: a
     .query()
     .arguments({ ticker: a.string().required() })
     .returns(a.ref('CompanyTheme').array())
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   publishNewArticle: a
@@ -165,14 +195,14 @@ const schema = a.schema({
   onNewArticle: a
     .subscription()
     .for(a.ref('publishNewArticle'))
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(newsQuery)),
 
   getTickersOfInterest: a
     .query()
     .arguments({ email: a.string().required() })
     .returns(a.string().array())
-    .authorization((allow) => [allow.guest()])
+    .authorization((allow) => [allow.guest(), allow.custom()])
     .handler(a.handler.function(valkeyQuery)),
 });
 
@@ -182,5 +212,9 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: 'iam',
+    lambdaAuthorizationMode: {
+      function: accessAuthorizer,
+      timeToLiveInSeconds: parseDuration(process.env.ACCESS_AUTHORIZER_CACHE_TTL, 300),
+    },
   },
 });

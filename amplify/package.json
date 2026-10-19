@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "deploy": "ampx pipeline-deploy --branch main --app-id <your-app-id>"
+    "deploy": "ampx pipeline-deploy --branch main --app-id <your-app-id>",
+    "test:access": "node --import tsx --test functions/access-shared/__tests__/*.test.ts",
+    "test:access:db": "ACCESS_TEST_DB=1 node --import tsx --test functions/access-shared/__tests__/*.test.ts"
   },
   "dependencies": {
     "@aws-amplify/backend": "^1.6.0",
@@ -20,6 +22,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.130",
     "@types/node": "^20.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.2.0"
   }
 }

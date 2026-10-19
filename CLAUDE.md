@@ -16,3 +16,9 @@ Implementation sketch (when ready):
 - **Never commit the sandbox `amplify_outputs.json`** — always run `git checkout amplify_outputs.json` after stopping the sandbox. The sandbox AppSync endpoint is `pqt7gbtx5vejdphzonk65k3ehm`; production is `g54zkvq6ezftzlpwy4mojsbdju`.
 - **Demo branch `demo/zxyz-hardcoded` must never be merged to `main`** — it contains hardcoded ZXYZ US data for demonstration purposes only and will be removed after the demo.
 - Production site: `https://equity.jcnews.ai/` — deployed automatically when `main` is pushed to GitHub.
+
+## Browser access (feature/ui-token-access)
+
+- UI access uses link tokens → session JWT → AppSync Lambda authorizer. See `docs/access/ARCHITECTURE.md` and `docs/access/LOCAL_TESTING.md`.
+- Link tokens are stateless HMAC tokens (`amplify/functions/access-shared/linkToken.ts`, vendored byte-for-byte into subscriptionServer — change both). Never log link tokens, session JWTs or keys. Revocation = `persons.tokens_valid_after`. `persons.token` (base64 email) is legacy and must not be used for auth.
+- Phase 1 keeps `allow.guest()` on reader ops (API not yet locked down); phase 2 checklist is in ARCHITECTURE.md.

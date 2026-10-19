@@ -2,6 +2,7 @@ import type { Schema } from '../../data/resource';
 import mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { sessionIdentity } from '../access-shared/identity';
 
 type TickerNewsHandler = Schema['getTickerNews']['functionHandler'];
 type IndustryHandler = Schema['getCompaniesByIndustry']['functionHandler'];
@@ -65,6 +66,19 @@ export const handler = async (event: any) => {
     database: process.env.SQL_DATABASE,
     connectTimeout: 10000,
   };
+
+  // Browser sessions (Lambda authorizer): identity comes from the verified session,
+  // never from client arguments. Guest-IAM callers keep the legacy behaviour (phase 1).
+  const who = sessionIdentity(event);
+  if (who) {
+    event.arguments = { ...(event.arguments || {}) };
+    if ('email' in event.arguments || event.fieldName === 'getUserProfile' || event.fieldName === 'notifyTickerOfInterest') {
+      event.arguments.email = who.email;
+    }
+    if (event.fieldName === 'getTickerNews' || event.fieldName === 'getMacroNews') {
+      event.arguments.allowedSources = who.allowedSources; // [] => no rows (default deny)
+    }
+  }
 
   switch (event.fieldName) {
     case 'getCompanyProfile':        return handleGetCompanyProfile(event, dbConfig);

@@ -10,7 +10,9 @@ import type { Schema } from '../amplify/data/resource'
 // import TradePanel from './components/TradePanel'
 import { type DowJonesArticle } from './data/dowJonesData'
 import TradeAlertLite from './components/TradeAlertLite'
+import { useAccess } from './access/AccessProvider'
 import './App.css'
+import './access/access.css'
 
 interface NewsArticle {
   id: number
@@ -53,7 +55,10 @@ interface RelatedCompany {
   companyName: string
 }
 
-const client = generateClient<Schema>({ authMode: 'iam' })
+// Data client. Every call passes { authMode: 'lambda', authToken } (see useAccess().authOpts):
+// the AppSync Lambda authorizer validates the signed session. The legacy guest-IAM mode is
+// no longer used by the UI (it stays enabled on the API until phase 2).
+const client = generateClient<Schema>()
 
 const VIEW_TO_SCREEN_KEY: Record<string, string> = {
   oil_news:        'oil',
@@ -77,7 +82,10 @@ function getPrevTradeDateCutoff(): Date {
 function App() {
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
-  const userEmail = params.get('email') || undefined
+  // Verified identity comes from the access session (never from the URL).
+  const access = useAccess()
+  const userEmail: string | undefined = access.email
+  const authOpts = access.authOpts
   const initialCountryCode = initialTicker.includes(' ') ? initialTicker.split(' ').pop()! : 'US'
   const [defaultCountryCode, setDefaultCountryCode] = useState(initialCountryCode)
   const [data, setData] = useState<TickerNewsData | null>(null)
@@ -108,8 +116,9 @@ function App() {
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [zxyzTypeFilter, setZxyzTypeFilter] = useState<string>('Both')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
-  const [allowedSources, setAllowedSources] = useState<string[] | undefined>(undefined)
-  const [department, setDepartment] = useState<string>('equity')
+  // Default-deny: sources come from the verified session; an empty list returns no articles.
+  const [allowedSources, setAllowedSources] = useState<string[] | undefined>(access.allowedSources)
+  const [department, setDepartment] = useState<string>(access.department)
   const [unreadScreens, setUnreadScreens] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('unreadScreens')
     return saved ? JSON.parse(saved) : {}
@@ -166,7 +175,7 @@ function App() {
     if (!userEmail) return
     let sub: any
     try {
-      const observable = (client as any).subscriptions?.onTickerOfInterest?.({ email: userEmail })
+      const observable = (client as any).subscriptions?.onTickerOfInterest?.({ email: userEmail }, authOpts())
       if (!observable) {
         console.warn('[interest] onTickerOfInterest not available on client.subscriptions')
         return
@@ -195,12 +204,12 @@ function App() {
       console.error('[interest] onTickerOfInterest setup error:', e)
     }
     return () => sub?.unsubscribe?.()
-  }, [userEmail])
+  }, [userEmail, access.session])
 
   useEffect(() => {
     let sub: any
     try {
-      const observable = (client as any).subscriptions?.onNewArticle?.()
+      const observable = (client as any).subscriptions?.onNewArticle?.(authOpts())
       console.log('[sub] observable:', observable)
       if (!observable) {
         console.warn('[sub] onNewArticle not available on client.subscriptions')
@@ -299,7 +308,7 @@ function App() {
       console.error('[sub] setup error:', e)
     }
     return () => sub?.unsubscribe?.()
-  }, [])
+  }, [access.session])
 
   useEffect(() => {
     document.title = `JC News - ${ticker}`
@@ -328,22 +337,14 @@ function App() {
 
   useEffect(() => {
     const loadPermissionsAndNews = async () => {
-      let sources: string[] | undefined = undefined
+      // Permissions come from the verified session (server also enforces them per request).
+      const sources: string[] = access.allowedSources
+      setAllowedSources(sources)
+      setDepartment(access.department)
       if (userEmail) {
-        try {
-          const { data: profile } = await client.queries.getUserProfile({ email: userEmail })
-          sources = ((profile?.allowedSources ?? []).filter(Boolean)) as string[]
-          setAllowedSources(sources)
-          setDepartment(profile?.department ?? 'equity')
-        } catch (err) {
-          console.error('Error fetching user profile:', err)
-          sources = []
-          setAllowedSources([])
-        }
-
         // Pre-populate interestTickers from Valkey (covers tickers sent before this tab opened)
         try {
-          const { data: valkeyTickers } = await client.queries.getTickersOfInterest({ email: userEmail })
+          const { data: valkeyTickers } = await client.queries.getTickersOfInterest({ email: userEmail }, authOpts())
           const fromValkey = (valkeyTickers ?? []).filter(Boolean) as string[]
           if (fromValkey.length > 0) {
             setInterestTickers(prev => {
@@ -407,7 +408,7 @@ function App() {
         screen,
         limit: 50,
         ...(allowedSources !== undefined && { allowedSources }),
-      })
+      }, authOpts())
       if (errors) throw new Error(errors[0].message)
       const articles: DowJonesArticle[] = (result ?? []).map((a: any) => ({
         id:            a.id,
@@ -448,7 +449,7 @@ function App() {
     setZxyzTypeFilter('Both')
     clearUnread(tickerValue)
     if (userEmail) {
-      client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue })
+      client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue }, authOpts())
         .catch(err => console.error('[interest] notifyTickerOfInterest error:', err))
     }
     // Demo: hardcoded data for ZXYZ US
@@ -499,7 +500,7 @@ function App() {
         ticker: tickerValue,
         limit: 10,
         ...(sources !== undefined && { allowedSources: sources }),
-      })
+      }, authOpts())
 
       if (errors) {
         throw new Error(errors[0].message)
@@ -532,7 +533,7 @@ function App() {
       console.log('Fetching related companies for industry:', industry)
       const { data: companies, errors } = await client.queries.getCompaniesByIndustry({
         industry: industry
-      })
+      }, authOpts())
 
       if (errors) {
         console.error('Error fetching related companies:', errors)
@@ -630,6 +631,10 @@ function App() {
 
   return (
     <div className="container">
+      <div className="access-bar">
+        <span className="access-bar-email" title="Signed in">{access.email}</span>
+        <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
+      </div>
       {activeView === 'db' ? (
         <div className="ticker-selector">
           <input

@@ -3,6 +3,9 @@ import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { newsQuery } from './functions/news-query/resource';
 import { valkeyQuery } from './functions/valkey-query/resource';
+import { accessExchange } from './functions/access-exchange/resource';
+import { accessAuthorizer } from './functions/access-authorizer/resource';
+import { CfnWebACL, CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { CfnFunction } from 'aws-cdk-lib/aws-lambda';
 import { CfnSecurityGroup } from 'aws-cdk-lib/aws-ec2';
@@ -12,6 +15,8 @@ const backend = defineBackend({
   data,
   newsQuery,
   valkeyQuery,
+  accessExchange,
+  accessAuthorizer,
 });
 
 // Existing: allow newsQuery Lambda to read RDS credentials from Secrets Manager
@@ -63,3 +68,81 @@ valkeyLambda.addToRolePolicy(
     resources: ['*'],
   })
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Browser access (phase 1): token exchange + Lambda authorizer
+// ─────────────────────────────────────────────────────────────────────────────
+const ACCOUNT_REGION_PREFIX = 'arn:aws:secretsmanager:us-east-2:585768142838:secret:';
+const dbSecretName  = process.env.ACCESS_DB_SECRET_NAME  || 'in4m/rds/credentials';
+const jwtSecretName = process.env.ACCESS_JWT_SECRET_NAME || 'jcnews/access/jwt';
+
+const linkSecretName = process.env.ACCESS_LINK_SECRET_NAME || 'jcnews/access/link-hmac';
+const secretArn = (name: string) => `${ACCOUNT_REGION_PREFIX}${name}-*`; // Secrets Manager appends a 6-char suffix
+
+// exchangeToken: DB (one persons read), session JWT key, link HMAC key.
+backend.accessExchange.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['secretsmanager:GetSecretValue'],
+    resources: [secretArn(dbSecretName), secretArn(jwtSecretName), secretArn(linkSecretName)],
+  })
+);
+// Authorizer: verifies the session JWT only — no DB or link-key access.
+backend.accessAuthorizer.resources.lambda.addToRolePolicy(
+  new PolicyStatement({ actions: ['secretsmanager:GetSecretValue'], resources: [secretArn(jwtSecretName)] })
+);
+
+// ── WAF: 100 requests / 5 min per IP, scoped to exchangeToken only ──
+// Disable for a sandbox with ACCESS_WAF=off (WAF costs ~$5/month per web ACL + $1/rule).
+// NOTE: an AppSync API can have only ONE web ACL. If one is already attached in the
+// console, add the rule below to that ACL instead of deploying this one.
+if ((process.env.ACCESS_WAF ?? 'on').toLowerCase() !== 'off') {
+  // Kept in the data stack to avoid a cross-stack reference to the API ARN.
+  const wafStack = backend.data.stack;
+  const limit = Number(process.env.ACCESS_WAF_LIMIT || 100);
+
+  // Match on the parsed JSON "query" value so JSON \u escapes cannot hide the field name.
+  const queryContains = (field: string): CfnWebACL.StatementProperty => ({
+    byteMatchStatement: {
+      fieldToMatch: {
+        jsonBody: {
+          matchPattern: { includedPaths: ['/query'] },
+          matchScope: 'VALUE',
+          invalidFallbackBehavior: 'EVALUATE_AS_STRING',
+          oversizeHandling: 'MATCH',
+        },
+      },
+      positionalConstraint: 'CONTAINS',
+      searchString: field,
+      textTransformations: [{ priority: 0, type: 'NONE' }],
+    },
+  });
+
+  const acl = new CfnWebACL(wafStack, 'AccessRateLimitAcl', {
+    scope: 'REGIONAL',
+    defaultAction: { allow: {} },
+    visibilityConfig: { cloudWatchMetricsEnabled: true, metricName: 'jcnewsAccessAcl', sampledRequestsEnabled: true },
+    rules: [
+      {
+        name: 'AccessOpsRateLimitPerIp',
+        priority: 0,
+        action: { block: {} },
+        statement: {
+          rateBasedStatement: {
+            limit,
+            evaluationWindowSec: 300,
+            aggregateKeyType: 'IP',
+            scopeDownStatement: {
+              ...queryContains('exchangeToken'),
+            },
+          },
+        },
+        visibilityConfig: { cloudWatchMetricsEnabled: true, metricName: 'jcnewsAccessOpsRate', sampledRequestsEnabled: true },
+      },
+    ],
+  });
+
+  new CfnWebACLAssociation(wafStack, 'AccessRateLimitAclAssociation', {
+    resourceArn: backend.data.resources.graphqlApi.arn,
+    webAclArn: acl.attrArn,
+  });
+}

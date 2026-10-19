@@ -1,0 +1,19 @@
+# Local MySQL 8 for the access-token code (scripts, dev server, integration tests).
+# Usage (from repo root):  docker compose -f local-dev/docker-compose.yml up -d
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: jcnews-access-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: localdev-root-pw      # local container only, not a real credential
+      MYSQL_DATABASE: in4mdatabase
+      TZ: UTC
+    command: ["--default-time-zone=+00:00"]
+    ports:
+      - "3307:3306"                               # 3307 avoids clashing with any local MySQL
+    volumes:
+      - ./seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-plocaldev-root-pw"]
+      interval: 3s
+      retries: 30
