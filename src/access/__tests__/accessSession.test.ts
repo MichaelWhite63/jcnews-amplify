@@ -116,6 +116,14 @@ test('legacy ?email= link -> reopen-from-vendor screen, email removed from URL',
   assert.ok(!events.some((e) => e.startsWith('exchange:')), 'no exchange for an email-only link')
 })
 
+test('legacy ?email= link survives a second bootstrap on the stripped URL (StrictMode double effect)', async () => {
+  const { c, events } = setup()
+  await c.bootstrap('?ticker=AAPL%20US&email=user%40example.com')
+  await c.bootstrap('?ticker=AAPL+US') // second effect run sees the URL the first run already cleaned
+  assert.deepEqual(c.state, { kind: 'needs-link', reason: 'legacy-email' })
+  assert.ok(!events.some((e) => e.startsWith('exchange:')))
+})
+
 test('no params, nothing stored -> access required', async () => {
   const { c } = setup()
   await c.bootstrap('')

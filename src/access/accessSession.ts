@@ -96,6 +96,9 @@ export class AccessController {
   private listeners = new Set<() => void>()
   private timer: unknown = null
   private disposed = false
+  /** Set once an `?email=` link was seen. bootstrap() can run twice (React StrictMode) and the
+   *  first run strips `email=` from the URL, so the second run must not forget it. */
+  private sawLegacyEmail = false
 
   constructor(private env: Env) {}
 
@@ -108,6 +111,7 @@ export class AccessController {
   async bootstrap(search: string): Promise<void> {
     const url = parseUrl(search)
     this.ticker = url.ticker
+    if (url.legacyEmail) this.sawLegacyEmail = true
     // Strip secrets from the address bar immediately (before any network call), keeping ticker.
     if (url.token || url.legacyEmail) this.env.replaceUrl(url.cleanedSearch)
 
@@ -125,11 +129,11 @@ export class AccessController {
     if (stored) {
       const res = await this.useStored(stored)
       if (res === 'invalid') {
-        this.set({ kind: 'needs-link', reason: url.legacyEmail ? 'legacy-email' : 'expired' })
+        this.set({ kind: 'needs-link', reason: this.sawLegacyEmail ? 'legacy-email' : 'expired' })
       }
       return
     }
-    this.set({ kind: 'needs-link', reason: url.legacyEmail ? 'legacy-email' : 'none' })
+    this.set({ kind: 'needs-link', reason: this.sawLegacyEmail ? 'legacy-email' : 'none' })
   }
 
   /** Use stored session if still valid, else silently exchange the stored link token. */
