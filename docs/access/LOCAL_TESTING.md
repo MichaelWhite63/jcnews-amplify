@@ -116,7 +116,7 @@ A sandbox is a separate copy of the backend (its own AppSync API and Cognito) in
 
 The sandbox Lambdas run in AWS, so they **can't reach the docker MySQL**. Use a scratch database on the existing RDS instance. **Don't point sandboxes at production `in4mdatabase` tables.**
 
-1. Create a scratch DB using the docker seed. Use your real RDS admin password; the one in `.env` is out of date.
+1. Create a scratch DB using the docker seed. Use the RDS credentials from Secrets Manager `in4m/rds/credentials` (profile JCNews, us-east-2); the `SQL_PASSWORD` in `.env` is stale and is rejected.
    ```bash
    mysql -h production-in4m-database.cnwkqkqik0k9.us-east-2.rds.amazonaws.com -u admin -p \
      -e "CREATE DATABASE jcnews_access_sandbox"
@@ -187,4 +187,4 @@ The sandbox Lambdas run in AWS, so they **can't reach the docker MySQL**. Use a 
 - **`invalid` for every token in the sandbox**: the Lambda can't read a secret (check the names passed at deploy), the link key differs from the one used to mint, or the DB is unreachable (RDS security group).
 - **`Unauthorized` on data calls after loading**: the JWT secret name differs between `accessExchange` and `accessAuthorizer`, or the browser clock is far off.
 - **No 403s from WAF**: `ACCESS_WAF=off` was set, or another web ACL is already attached to the API (only one is allowed).
-- **`Access denied` with `.env` credentials**: the `SQL_PASSWORD` in `.env` is out of date.
+- **`Access denied` with `.env` credentials**: the `SQL_PASSWORD` in `.env` is stale. Use Secrets Manager `in4m/rds/credentials` instead.
