@@ -44,7 +44,7 @@ export function buildLink(baseUrl: string, token: string, ticker?: string | null
 // ─────────────────────────── validation ──────────────────────────
 
 export type TokenCheck =
-  | { ok: true; person: PersonRow; issuedAt: Date; expiresAt: Date }
+  | { ok: true; person: PersonRow; issuedAt: Date; expiresAt: Date; kid: string }
   | { ok: false; reason: 'malformed' | 'unknown_kid' | 'bad_signature' | 'not_yet_valid' | 'expired' | 'unknown_person' | 'revoked' };
 
 /** Signature/date first (no I/O for junk or forgeries), then ONE persons read. */
@@ -56,7 +56,7 @@ export async function checkLinkToken(deps: AccessDeps, raw: unknown, now: Date):
   if (person.tokensValidAfter && v.claims.issuedAt.getTime() < person.tokensValidAfter.getTime()) {
     return { ok: false, reason: 'revoked' };
   }
-  return { ok: true, person, issuedAt: v.claims.issuedAt, expiresAt: new Date(v.claims.issuedAt.getTime() + deps.config.tokenTtlSec * 1000) };
+  return { ok: true, person, issuedAt: v.claims.issuedAt, expiresAt: new Date(v.claims.issuedAt.getTime() + deps.config.tokenTtlSec * 1000), kid: v.claims.kid };
 }
 
 // ─────────────────────────── exchange ────────────────────────────
@@ -85,14 +85,17 @@ export async function exchangeToken(deps: AccessDeps, rawToken: unknown): Promis
   }
   let linkToken: string | null = null;
   let linkTokenExpiresAt = check.expiresAt;
+  let kid = check.kid;
   // Silent rotation: older than rotateAfter -> today's token (also re-signs with the active kid).
   if (now.getTime() - check.issuedAt.getTime() >= deps.config.rotateAfterSec * 1000) {
     const minted = mintToken(deps, check.person.id, now);
     linkToken = minted.token;
     linkTokenExpiresAt = minted.expiresAt;
+    kid = deps.linkKeys.activeKid;
     deps.log?.('exchange.rotated', { personId: check.person.id });
   }
   const session = issueSession(deps, check.person, now);
+  deps.log?.('exchange.ok', { personId: check.person.id, rotated: linkToken !== null, kid });
   return {
     status: 'ok',
     session: session.jwt,

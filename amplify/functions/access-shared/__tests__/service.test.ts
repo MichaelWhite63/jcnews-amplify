@@ -72,6 +72,33 @@ test('rotation: none before 60d; at 60d a fresh token for today is returned; old
   assert.equal((await okExchange(deps, r.linkToken!)).rotated, false);
 });
 
+test('exchange.ok: one structured line with personId/rotated/kid only; never token, JWT or email', async () => {
+  const { deps, clock } = makeDeps();
+  const calls: Array<[string, Record<string, unknown> | undefined]> = [];
+  deps.log = (m, extra) => { calls.push([m, extra]); };
+  const m = mintToken(deps, 1);
+  const r = await okExchange(deps, m.token);
+  assert.deepEqual(calls.filter(([n]) => n === 'exchange.ok'), [['exchange.ok', { personId: 1, rotated: false, kid: 'k1' }]]);
+  clock.advance(61 * DAY);
+  calls.length = 0;
+  const r2 = await okExchange(deps, m.token);
+  assert.deepEqual(calls.filter(([n]) => n === 'exchange.ok'), [['exchange.ok', { personId: 1, rotated: true, kid: 'k1' }]]);
+  assert.ok(calls.some(([n]) => n === 'exchange.rotated'));
+  const serialized = JSON.stringify(calls);
+  for (const secret of [m.token, r.session, r2.session, r2.linkToken!, 'alice@example.com']) {
+    assert.ok(!serialized.includes(secret));
+  }
+});
+
+test('exchange.ok: not logged for a denied exchange', async () => {
+  const { deps } = makeDeps();
+  const names: string[] = [];
+  deps.log = (m) => { names.push(m); };
+  assert.deepEqual(await exchangeToken(deps, 'junk'), { status: 'invalid' });
+  assert.deepEqual(await exchangeToken(deps, mintToken(deps, 999).token), { status: 'invalid' });
+  assert.deepEqual(names, ['exchange.denied', 'exchange.denied']);
+});
+
 test('revocation: tokens_valid_after rejects older tokens (incl. today); keepToday keeps today', async () => {
   const { deps, clock } = makeDeps();
   const old = mintToken(deps, 1).token;
