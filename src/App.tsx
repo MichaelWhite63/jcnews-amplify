@@ -449,8 +449,13 @@ function App() {
     setZxyzTypeFilter('Both')
     clearUnread(tickerValue)
     if (userEmail) {
-      client.mutations.notifyTickerOfInterest({ email: userEmail, ticker: tickerValue }, authOpts())
-        .catch(err => console.error('[interest] notifyTickerOfInterest error:', err))
+      // Best effort: a missing or failing method must never block the ticker load.
+      try {
+        client.mutations?.notifyTickerOfInterest?.({ email: userEmail, ticker: tickerValue }, authOpts())
+          ?.catch(err => console.warn('[interest] notifyTickerOfInterest error:', err))
+      } catch (err) {
+        console.warn('[interest] notifyTickerOfInterest unavailable:', err)
+      }
     }
     // Demo: hardcoded data for ZXYZ US
     if (tickerValue === 'ZXYZ US') {
