@@ -184,3 +184,60 @@ test('switching person on the same browser clears previous person UI state', asy
   assert.equal(storage.getItem('interestTickers'), null)
   assert.equal(c.state.kind === 'ready' && c.state.email, 'bob@example.com')
 })
+
+// ── ?token= while already signed in ─────────────────────────────────────────────────────────────
+const linkTok = (personId: number | string, day = '20300101') =>
+  `${Buffer.from(`v1.k1.${personId}.${day}`).toString('base64url')}.${'s'.repeat(43)}`
+
+test('?token= for the signed-in person with a healthy session: no exchange, token stripped, ready', async () => {
+  const { c, storage, events } = setup()
+  storage.setItem(STORAGE_KEY, JSON.stringify(stored({ linkToken: linkTok(7), sessionExp: nowSec + 3600 })))
+  await c.bootstrap('?ticker=AAPL%20US&token=' + linkTok(7, '20300102'))
+  assert.deepEqual(events, ['replace:?ticker=AAPL+US'])
+  assert.equal(c.state.kind, 'ready')
+  assert.equal(c.authOpts().authToken, 'jwt-old')
+})
+
+test('?token= for a different person: exchanges', async () => {
+  const t = linkTok(8)
+  const { c, storage, events } = setup({ [t]: ok({ session: 'jwt-bob', email: 'bob@example.com' }) })
+  storage.setItem(STORAGE_KEY, JSON.stringify(stored({ linkToken: linkTok(7) })))
+  await c.bootstrap('?token=' + t)
+  assert.deepEqual(events, ['replace:', `exchange:${t}`])
+  assert.equal(c.authOpts().authToken, 'jwt-bob')
+})
+
+test('?token= for the same person but session near expiry (<= 5 min): exchanges', async () => {
+  const t = linkTok(7, '20300102')
+  const { c, storage, events } = setup({ [t]: ok({ session: 'jwt-new' }) })
+  storage.setItem(STORAGE_KEY, JSON.stringify(stored({ linkToken: linkTok(7), sessionExp: nowSec + 299 })))
+  await c.bootstrap('?token=' + t)
+  assert.ok(events.includes(`exchange:${t}`))
+  assert.equal(c.authOpts().authToken, 'jwt-new')
+})
+
+test('malformed ?token= with a healthy session: exchanges (and is stripped)', async () => {
+  for (const bad of ['not-a-token', linkTok('abc'), 'Zm9v.' + 'x'.repeat(43)]) {
+    const { c, storage, events } = setup()
+    storage.setItem(STORAGE_KEY, JSON.stringify(stored({ linkToken: linkTok(7) })))
+    await c.bootstrap('?token=' + bad)
+    assert.deepEqual(events.slice(0, 2), ['replace:', `exchange:${bad}`])
+  }
+})
+
+test('token is stripped from the URL in every case, before any exchange', async () => {
+  const same = linkTok(7, '20300102')
+  const cases: [string, StoredAccess | null][] = [
+    [same, stored({ linkToken: linkTok(7) })],            // skip
+    [linkTok(9), stored({ linkToken: linkTok(7) })],      // different person
+    [same, stored({ linkToken: linkTok(7), sessionExp: nowSec + 10 })], // near expiry
+    ['garbage', stored({ linkToken: linkTok(7) })],       // malformed
+    [same, null],                                         // no session
+  ]
+  for (const [tok, st] of cases) {
+    const { c, storage, events } = setup()
+    if (st) storage.setItem(STORAGE_KEY, JSON.stringify(st))
+    await c.bootstrap(`?ticker=X&token=${tok}`)
+    assert.equal(events[0], 'replace:?ticker=X')
+  }
+})

@@ -636,10 +636,6 @@ function App() {
 
   return (
     <div className="container">
-      <div className="access-bar">
-        <span className="access-bar-email" title="Signed in">{access.email}</span>
-        <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
-      </div>
       {activeView === 'db' ? (
         <div className="ticker-selector">
           <input
@@ -676,6 +672,7 @@ function App() {
               {unreadScreens[historyTicker] && <span className="unread-dot" />}
             </span>
           ))}
+          <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
         </div>
       ) : (
         <div className="dj-table-header">
@@ -684,6 +681,7 @@ function App() {
               : activeView === 'trade_alert_lite' ? 'Trade Alert Lite'
               : activeView}
           </h2>
+          <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
         </div>
       )}
 

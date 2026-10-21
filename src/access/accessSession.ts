@@ -9,6 +9,7 @@
 export const STORAGE_KEY = 'jcnews.access.v1'
 const REFRESH_MARGIN_SEC = 120      // refresh this long before the session expires
 const MIN_VALID_SEC = 30            // a session with less than this left is treated as expired
+const SKIP_EXCHANGE_MIN_SEC = 300   // ?token= for the already-signed-in person skips the exchange if the session has more than this left
 const LEGACY_CLEAR_KEYS = ['interestTickers', 'unreadScreens', 'tickerSearchHistory'] // per-user UI state
 
 export interface ExchangeOk {
@@ -66,6 +67,16 @@ export function parseUrl(search: string): UrlInfo {
   return { token: token || null, legacyEmail: legacyEmail || null, ticker, cleanedSearch: rest ? `?${rest}` : '' }
 }
 
+/** Person id from a link token's payload ("v1.<kid>.<personId>.<day>"). Decode only: NOT verified. */
+export function linkTokenPersonId(token: string): number | null {
+  try {
+    const payload = token.split('.')[0]
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const m = /^v1\.[A-Za-z0-9_-]{1,16}\.([1-9][0-9]{0,14})\.[0-9]{8}$/.exec(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)))
+    return m ? Number(m[1]) : null
+  } catch { return null }
+}
+
 export interface Env {
   storage: StorageLike
   exchange: ExchangeFn
@@ -118,6 +129,12 @@ export class AccessController {
     const stored = readStored(this.env.storage)
 
     if (url.token) {
+      // Already signed in as the person this link is for, with a healthy session: nothing to exchange.
+      // Decode-only is safe here because the stored session was verified when it was issued.
+      if (stored && this.isSamePersonWithFreshSession(url.token, stored)) {
+        this.adopt(stored)
+        return
+      }
       const r = await this.tryExchange(url.token, stored)
       if (r === 'ok' || r === 'error') return
       // Link in the URL is dead. Fall back to stored credentials if there are any.
@@ -134,6 +151,13 @@ export class AccessController {
       return
     }
     this.set({ kind: 'needs-link', reason: this.sawLegacyEmail ? 'legacy-email' : 'none' })
+  }
+
+  private isSamePersonWithFreshSession(token: string, stored: StoredAccess): boolean {
+    const now = sec(this.env.now())
+    if (stored.sessionExp - now <= SKIP_EXCHANGE_MIN_SEC || stored.linkTokenExp <= now) return false
+    const id = linkTokenPersonId(token)
+    return id !== null && id === linkTokenPersonId(stored.linkToken)
   }
 
   /** Use stored session if still valid, else silently exchange the stored link token. */
