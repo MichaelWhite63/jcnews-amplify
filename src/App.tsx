@@ -715,7 +715,7 @@ function App() {
                     <tr>
                       <th>Date</th>
                       <th>Ticker</th>
-                      <th>Title</th>
+                      <th>Headline</th>
                       <th>Importance</th>
                     </tr>
                   </thead>
@@ -821,7 +821,7 @@ function App() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Title</th>
+                    <th>Headline</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -906,7 +906,7 @@ function App() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Title</th>
+                    <th>Headline</th>
                     {data.security?.ticker === 'ZXYZ US' && <th className="copy-col-header"></th>}
                     <th>
                       <div className="th-filter">
