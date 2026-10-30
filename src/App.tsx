@@ -609,6 +609,8 @@ function App() {
     VIEW_TITLES[view] ??
     view.replace(/_news$/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
+  const displayTicker = (t: string) => t.replace(/ US$/, '')
+
   const formatDateNoYear = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -680,7 +682,7 @@ function App() {
               className={`history-item ${historyTicker === searchTicker ? 'active' : ''} ${unreadScreens[historyTicker] ? 'unread' : ''}`}
               onClick={() => selectFromHistory(historyTicker)}
             >
-              {historyTicker}
+              {displayTicker(historyTicker)}
               {unreadScreens[historyTicker] && <span className="unread-dot" />}
             </span>
           ))}
