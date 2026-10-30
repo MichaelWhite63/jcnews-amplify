@@ -596,6 +596,21 @@ function App() {
     })
   }
 
+  const VIEW_TITLES: Record<string, string> = {
+    oil_news: 'Oil',
+    rates_news: 'Rates',
+    fx_news: 'FX',
+    inflation_news: 'Inflation',
+    employment_news: 'Employment',
+    trade_news: 'Trade',
+    interest_list: 'Watchlist',
+  }
+  const viewTitle = (view: string) =>
+    VIEW_TITLES[view] ??
+    view.replace(/_news$/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
+  const displayTicker = (t: string) => t.replace(/ US$/, '')
+
   const formatDateNoYear = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -667,7 +682,7 @@ function App() {
               className={`history-item ${historyTicker === searchTicker ? 'active' : ''} ${unreadScreens[historyTicker] ? 'unread' : ''}`}
               onClick={() => selectFromHistory(historyTicker)}
             >
-              {historyTicker}
+              {displayTicker(historyTicker)}
               {unreadScreens[historyTicker] && <span className="unread-dot" />}
             </span>
           ))}
@@ -676,7 +691,7 @@ function App() {
       ) : (
         <div className="dj-table-header">
           <h2 className="dj-table-title">
-            {activeView === 'interest_list' ? 'Watchlist' : activeView}
+            {viewTitle(activeView)}
           </h2>
           <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
         </div>
@@ -796,12 +811,11 @@ function App() {
                   <tr>
                     <th>Date</th>
                     <th>Title</th>
-                    <th>Source</th>
                   </tr>
                 </thead>
                 <tbody>
                   {macroLoading ? (
-                    <tr><td colSpan={3} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
+                    <tr><td colSpan={2}style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
                   ) : null}
                   {!macroLoading && macroArticles.map((article: DowJonesArticle) => {
                     const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
@@ -815,20 +829,19 @@ function App() {
                         )}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
                         <td className="headline-cell">
                           <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
                           {article.headline}
                         </td>
-                        <td className="category-cell">{article.source}</td>
                       </tr>,
                       isExpanded && (
                         <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                          <td colSpan={3}>
+                          <td colSpan={2}>
                             <div className="accordion-detail">
                               <div className="accordion-detail-header">
                                 <span className="article-summary-meta">
-                                  Dow Jones · {formatDate(article.publishedDate)}
+                                  Dow Jones · {formatDateNoYear(article.publishedDate)}
                                 </span>
                                 <div className="accordion-detail-buttons">
                                   <button
@@ -960,7 +973,7 @@ function App() {
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                          <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
                           <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
@@ -1000,7 +1013,7 @@ function App() {
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
-                                    {article.source} · {formatDate(article.publishedDate)}
+                                    {article.source} · {formatDateNoYear(article.publishedDate)}
                                   </span>
                                   <div className="accordion-detail-buttons">
                                     <button

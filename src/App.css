@@ -191,7 +191,6 @@
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--text-primary);
   margin: 0;
 }
@@ -394,17 +393,6 @@
   background-color: rgba(99, 102, 241, 0.2);
 }
 
-.category-cell {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--text-muted);
-  width: 7%;
-  white-space: nowrap;
-}
-
 .id-cell {
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -422,7 +410,7 @@
 }
 
 .date-cell {
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   white-space: nowrap;
   width: 12%;
