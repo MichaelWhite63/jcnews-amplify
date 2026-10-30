@@ -422,7 +422,7 @@
 }
 
 .date-cell {
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   white-space: nowrap;
   width: 12%;

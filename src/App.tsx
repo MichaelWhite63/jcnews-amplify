@@ -815,7 +815,7 @@ function App() {
                         )}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
                         <td className="headline-cell">
                           <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
                           {article.headline}
@@ -828,7 +828,7 @@ function App() {
                             <div className="accordion-detail">
                               <div className="accordion-detail-header">
                                 <span className="article-summary-meta">
-                                  Dow Jones · {formatDate(article.publishedDate)}
+                                  Dow Jones · {formatDateNoYear(article.publishedDate)}
                                 </span>
                                 <div className="accordion-detail-buttons">
                                   <button
@@ -960,7 +960,7 @@ function App() {
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{formatDate(article.publishedDate)}</td>
+                          <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
                           <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
@@ -1000,7 +1000,7 @@ function App() {
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
-                                    {article.source} · {formatDate(article.publishedDate)}
+                                    {article.source} · {formatDateNoYear(article.publishedDate)}
                                   </span>
                                   <div className="accordion-detail-buttons">
                                     <button
