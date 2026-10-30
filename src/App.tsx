@@ -796,12 +796,11 @@ function App() {
                   <tr>
                     <th>Date</th>
                     <th>Title</th>
-                    <th>Source</th>
                   </tr>
                 </thead>
                 <tbody>
                   {macroLoading ? (
-                    <tr><td colSpan={3} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
+                    <tr><td colSpan={2}style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
                   ) : null}
                   {!macroLoading && macroArticles.map((article: DowJonesArticle) => {
                     const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
@@ -820,11 +819,10 @@ function App() {
                           <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
                           {article.headline}
                         </td>
-                        <td className="category-cell">{article.source}</td>
                       </tr>,
                       isExpanded && (
                         <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                          <td colSpan={3}>
+                          <td colSpan={2}>
                             <div className="accordion-detail">
                               <div className="accordion-detail-header">
                                 <span className="article-summary-meta">
