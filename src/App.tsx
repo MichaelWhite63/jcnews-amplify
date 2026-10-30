@@ -596,6 +596,19 @@ function App() {
     })
   }
 
+  const VIEW_TITLES: Record<string, string> = {
+    oil_news: 'Oil',
+    rates_news: 'Rates',
+    fx_news: 'FX',
+    inflation_news: 'Inflation',
+    employment_news: 'Employment',
+    trade_news: 'Trade',
+    interest_list: 'Watchlist',
+  }
+  const viewTitle = (view: string) =>
+    VIEW_TITLES[view] ??
+    view.replace(/_news$/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
   const formatDateNoYear = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -676,7 +689,7 @@ function App() {
       ) : (
         <div className="dj-table-header">
           <h2 className="dj-table-title">
-            {activeView === 'interest_list' ? 'Watchlist' : activeView}
+            {viewTitle(activeView)}
           </h2>
           <button className="access-bar-signout" onClick={access.signOut}>Sign out</button>
         </div>
