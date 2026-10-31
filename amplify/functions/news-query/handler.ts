@@ -25,6 +25,36 @@ interface NewsRow extends RowDataPacket {
   url: string | null;
 }
 
+// ── Dow Jones story-chaining fields ──────────────────────────────────────────
+// Columns exist on every news row; they are NULL on non-DJ rows (and absent from the API result then).
+const DJ_COLUMNS =
+  'dj_accession_number, dj_seq, dj_take_id, dj_hot, dj_corrected, dj_temp, dj_display_time, dj_codes';
+
+// dj_display_time is stored UTC (DATETIME, no zone); the mysql2 connection returns it as a Date in the
+// Lambda's local zone (UTC), same as createdAt.
+const djFields = (row: any) => ({
+  djAccessionNumber: row.dj_accession_number ?? null,
+  djSeq:             row.dj_seq ?? null,
+  djTakeId:          row.dj_take_id ?? null,
+  djHot:             row.dj_hot == null ? null : !!row.dj_hot,
+  djCorrected:       row.dj_corrected == null ? null : !!row.dj_corrected,
+  djTemp:            row.dj_temp == null ? null : !!row.dj_temp,
+  djDisplayTime:     row.dj_display_time ? new Date(row.dj_display_time).toISOString() : null,
+  djCodes:           row.dj_codes ?? null,
+});
+
+// publishNewArticle: pass the optional dj fields through unchanged (undefined -> null).
+const djPassthrough = (a: any) => ({
+  djAccessionNumber: a.djAccessionNumber ?? null,
+  djSeq:             a.djSeq ?? null,
+  djTakeId:          a.djTakeId ?? null,
+  djHot:             a.djHot ?? null,
+  djCorrected:       a.djCorrected ?? null,
+  djTemp:            a.djTemp ?? null,
+  djDisplayTime:     a.djDisplayTime ?? null,
+  djCodes:           a.djCodes ?? null,
+});
+
 const secretsClient = new SecretsManagerClient({ region: 'us-east-2' });
 let secretsResolved = false;
 
@@ -75,7 +105,7 @@ export const handler = async (event: any) => {
     if ('email' in event.arguments || event.fieldName === 'getUserProfile' || event.fieldName === 'notifyTickerOfInterest') {
       event.arguments.email = who.email;
     }
-    if (event.fieldName === 'getTickerNews' || event.fieldName === 'getMacroNews') {
+    if (event.fieldName === 'getTickerNews' || event.fieldName === 'getMacroNews' || event.fieldName === 'getStoryTakes') {
       event.arguments.allowedSources = who.allowedSources; // [] => no rows (default deny)
     }
   }
@@ -88,6 +118,7 @@ export const handler = async (event: any) => {
     case 'publishNewArticle':        return handlePublishNewArticle(event);
     case 'notifyTickerOfInterest':   return handleNotifyTickerOfInterest(event);
     case 'getTickerNews':            return handleGetTickerNews(event, dbConfig);
+    case 'getStoryTakes':            return handleGetStoryTakes(event, dbConfig);
     default:
       console.error('Unknown fieldName:', event.fieldName);
       throw new Error(`Unknown operation: ${event.fieldName}`);
@@ -108,6 +139,7 @@ const handlePublishNewArticle = (event: any) => {
     importance:    a.importance    ?? '',
     category:      a.category      ?? '',
     screen:        a.screen        ?? '',
+    ...djPassthrough(a),
   };
 };
 
@@ -213,7 +245,8 @@ const handleGetTickerNews = async (event: any, dbConfig: object) => {
     } else if (allowedSources && allowedSources.length > 0) {
       const placeholders = allowedSources.map(() => '?').join(', ');
       [newsRows] = await connection.query<any[]>(
-        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
+        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category,
+                ${DJ_COLUMNS}
          FROM news
          WHERE ticker = ?
            AND createdAt >= ?
@@ -223,7 +256,8 @@ const handleGetTickerNews = async (event: any, dbConfig: object) => {
       );
     } else {
       [newsRows] = await connection.query<any[]>(
-        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category
+        `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category,
+                ${DJ_COLUMNS}
          FROM news
          WHERE ticker = ?
            AND createdAt >= ?
@@ -261,6 +295,7 @@ const handleGetTickerNews = async (event: any, dbConfig: object) => {
         url: article.articleURL || '',
         importance: article.importance || '',
         category: article.category || '',
+        ...djFields(article),
       })),
     };
 
@@ -271,6 +306,70 @@ const handleGetTickerNews = async (event: any, dbConfig: object) => {
     if (connection) {
       await connection.end();
     }
+  }
+};
+
+// All takes of one story, oldest first. Read-only. No date cutoff (early takes of a long-running story
+// must still show). allowedSources behaves as in getTickerNews: [] => no rows, undefined => no filter.
+// A story is stored once per ticker it is about; collapse to one row per take (dj_take_id), keeping the
+// lowest id so the result is stable.
+const handleGetStoryTakes = async (event: any, dbConfig: object) => {
+  const { accessionNumber, takeId, allowedSources } = event.arguments;
+  if (!accessionNumber) return [];
+  if (allowedSources && allowedSources.length === 0) return [];
+
+  let connection;
+  try {
+    connection = await mysql.createConnection(dbConfig);
+    const sourceClause = allowedSources && allowedSources.length > 0
+      ? `AND source IN (${allowedSources.map(() => '?').join(', ')})`
+      : '';
+    // dj_take_id is "docdate:product:seq"; keep only takes of the selected take's product.
+    const [docdate, product] = typeof takeId === 'string' ? takeId.split(':') : [];
+    const productClause = docdate && product && /^[A-Za-z0-9]+$/.test(docdate + product)
+      ? 'AND dj_take_id LIKE ?'
+      : '';
+    const [rows] = await connection.query<any[]>(
+      `SELECT id, ticker, title, summary, article, articleURL, source, createdAt, importance, category,
+              ${DJ_COLUMNS}
+       FROM news
+       WHERE dj_accession_number = ?
+         ${productClause}
+         ${sourceClause}
+       ORDER BY dj_seq ASC, id ASC`,
+      [
+        accessionNumber,
+        ...(productClause ? [`${docdate}:${product}:%`] : []),
+        ...(allowedSources && allowedSources.length > 0 ? allowedSources : []),
+      ]
+    );
+
+    const seen = new Set<string>();
+    const takes: any[] = [];
+    for (const row of rows) {
+      const key = row.dj_take_id ?? `id:${row.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      takes.push({
+        id: row.id || 0,
+        ticker: row.ticker || '',
+        headline: row.title || '',
+        summary: row.summary || '',
+        article: row.article || '',
+        publishedDate: row.createdAt ? new Date(row.createdAt).toISOString() : new Date().toISOString(),
+        source: row.source || '',
+        url: row.articleURL || '',
+        importance: row.importance || '',
+        category: row.category || '',
+        ...djFields(row),
+      });
+    }
+    return takes;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error(`Failed to fetch story takes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    if (connection) await connection.end();
   }
 };
 

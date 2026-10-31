@@ -10,21 +10,10 @@ import type { Schema } from '../amplify/data/resource'
 // import TradePanel from './components/TradePanel'
 import { type DowJonesArticle } from './data/dowJonesData'
 import { useAccess } from './access/AccessProvider'
+import StoryDetail, { DjMarkers } from './StoryDetail'
+import { type NewsArticle, collapseToLatestTake, displayTimeOf, formatET, pickDj } from './djStory'
 import './App.css'
 import './access/access.css'
-
-interface NewsArticle {
-  id: number
-  ticker: string
-  headline: string
-  summary: string
-  article: string
-  publishedDate: string
-  source: string
-  url: string
-  importance: string
-  category: string
-}
 
 interface Security {
   ticker: string
@@ -232,7 +221,7 @@ function App() {
           // Interest list feed — independent of current view
           if (article.ticker && interestTickersRef.current.includes(article.ticker)) {
             const newId = article.id ?? Date.now()
-            setInterestFeed(prev => [{
+            setInterestFeed(prev => collapseToLatestTake([{
               id:            newId,
               ticker:        article.ticker        || '',
               headline:      article.headline      || '',
@@ -243,7 +232,8 @@ function App() {
               url:           article.url           || '',
               importance:    article.importance    || '',
               category:      article.category      || '',
-            }, ...prev])
+              ...pickDj(article),
+            }, ...prev]))
           }
 
           const key: string = article.screen || article.ticker
@@ -293,8 +283,9 @@ function App() {
                 url:           article.url            || '',
                 importance:    article.importance     || '',
                 category:      article.category       || '',
+                ...pickDj(article),
               }
-              return { ...prev, newsArticles: [newArticle, ...(prev.newsArticles ?? [])] }
+              return { ...prev, newsArticles: collapseToLatestTake([newArticle, ...(prev.newsArticles ?? [])]) }
             })
             markArticleNew(newId)
           } else {
@@ -517,7 +508,8 @@ function App() {
         throw new Error(errors[0].message)
       }
 
-      setData(result as TickerNewsData)
+      const tickerData = result as TickerNewsData
+      setData(tickerData && { ...tickerData, newsArticles: collapseToLatestTake(tickerData.newsArticles ?? []) })
 
       // Highlight any articles that arrived via subscription while on another screen
       const pending = pendingNewIdsRef.current[tickerValue] ?? []
@@ -592,6 +584,32 @@ function App() {
     }
     setShowIndustryDropdown(!showIndustryDropdown)
   }
+
+  const loadChain = async (accessionNumber: string, takeId?: string | null): Promise<NewsArticle[]> => {
+    const { data: rows, errors } = await client.queries.getStoryTakes({
+      accessionNumber,
+      ...(takeId ? { takeId } : {}),
+      ...(allowedSources !== undefined && { allowedSources }),
+    }, authOpts())
+    if (errors) throw new Error(errors[0].message)
+    return (rows ?? []).filter(Boolean).map((r: any) => ({
+      id:            r.id            ?? 0,
+      ticker:        r.ticker        || '',
+      headline:      r.headline      || '',
+      summary:       r.summary       || '',
+      article:       r.article       || '',
+      publishedDate: r.publishedDate || new Date().toISOString(),
+      source:        r.source        || '',
+      url:           r.url           || '',
+      importance:    r.importance    || '',
+      category:      r.category      || '',
+      ...pickDj(r),
+    }))
+  }
+
+  // Dow Jones rows show ET from dj_display_time (createdAt when null); other rows are unchanged.
+  const rowTime = (a: NewsArticle, plain: (d: string) => string) =>
+    a.djAccessionNumber ? formatET(displayTimeOf(a)) : plain(a.publishedDate)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -740,11 +758,12 @@ function App() {
                           onClick={() => hasDetail && setSelectedInterestArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
+                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
                           <td className="ticker-cell">{displayTicker(article.ticker)}</td>
                           <td className="headline-cell">
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
+                            <DjMarkers a={article} />
                           </td>
                           <td className="importance-cell">
                             {article.importance ? importanceBadge(article.importance) : '-'}
@@ -758,7 +777,7 @@ function App() {
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
-                                    {article.source} · {formatDateNoYear(article.publishedDate)}
+                                    {article.source} · {rowTime(article, formatDateNoYear)}
                                   </span>
                                   <div className="accordion-detail-buttons">
                                     <button
@@ -794,14 +813,7 @@ function App() {
                                     )}
                                   </div>
                                 </div>
-                                <div className="accordion-detail-text">
-                                  {articleText
-                                    .replace(/\r\n|\r/g, '\n')
-                                    .split('\n')
-                                    .map((line, i) => (
-                                      <span key={i}>{line || ' '}<br /></span>
-                                    ))}
-                                </div>
+                                <StoryDetail article={article} loadChain={loadChain} />
                               </div>
                             </td>
                           </tr>
@@ -984,10 +996,11 @@ function App() {
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
+                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
                           <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
+                            <DjMarkers a={article} />
                           </td>
                           {data.security?.ticker === 'ZXYZ US' && (
                             <td className="copy-col-cell">
@@ -1019,7 +1032,7 @@ function App() {
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
-                                    {article.source} · {formatDateNoYear(article.publishedDate)}
+                                    {article.source} · {rowTime(article, formatDateNoYear)}
                                   </span>
                                   <div className="accordion-detail-buttons">
                                     <button
@@ -1055,14 +1068,7 @@ function App() {
                                     )}
                                   </div>
                                 </div>
-                                <div className="accordion-detail-text">
-                                  {(article.article || article.summary || '')
-                                    .replace(/\r\n|\r/g, '\n')
-                                    .split('\n')
-                                    .map((line, i) => (
-                                      <span key={i}>{line || '\u00A0'}<br /></span>
-                                    ))}
-                                </div>
+                                <StoryDetail article={article} loadChain={loadChain} />
                               </div>
                             </td>
                           </tr>
