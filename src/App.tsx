@@ -78,6 +78,13 @@ function getPrevTradeDateCutoff(): Date {
   return prev
 }
 
+function importanceBadge(importance: string) {
+  const n = Number(importance)
+  const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
+  const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
+  return <span className={`importance-badge ${cls}`}>{label}</span>
+}
+
 function App() {
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
@@ -708,17 +715,18 @@ function App() {
                     <tr>
                       <th>Date</th>
                       <th>Ticker</th>
-                      <th>Title</th>
+                      <th>Headline</th>
+                      <th>Importance</th>
                     </tr>
                   </thead>
                   <tbody>
                     {interestFeed.length === 0 ? (
                       <tr>
-                        <td colSpan={3} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No activity yet this session.
                           {interestTickers.length === 0
                             ? ' Waiting for ticker-of-interest events…'
-                            : ` Watching: ${interestTickers.join(', ')}`}
+                            : ` Watching: ${interestTickers.map(displayTicker).join(', ')}`}
                         </td>
                       </tr>
                     ) : interestFeed.flatMap((article) => {
@@ -733,17 +741,20 @@ function App() {
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
                           <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
-                          <td>{article.ticker}</td>
+                          <td className="ticker-cell">{displayTicker(article.ticker)}</td>
                           <td className="headline-cell">
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
+                          </td>
+                          <td className="importance-cell">
+                            {article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
                         </tr>
                       )]
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={3}>
+                            <td colSpan={4}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
@@ -810,7 +821,7 @@ function App() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Title</th>
+                    <th>Headline</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -895,7 +906,7 @@ function App() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Title</th>
+                    <th>Headline</th>
                     {data.security?.ticker === 'ZXYZ US' && <th className="copy-col-header"></th>}
                     <th>
                       <div className="th-filter">
@@ -997,12 +1008,7 @@ function App() {
                               article.category
                                 ? <span className={`importance-badge ${article.category === 'News' ? 'importance-mid' : 'importance-low'}`}>{article.category}</span>
                                 : '-'
-                            ) : article.importance ? (() => {
-                              const n = Number(article.importance)
-                              const label = n <= 3 ? 'High' : n <= 6 ? 'Medium' : 'Low'
-                              const cls = n <= 3 ? 'importance-high' : n <= 6 ? 'importance-mid' : 'importance-low'
-                              return <span className={`importance-badge ${cls}`}>{label}</span>
-                            })() : '-'}
+                            ) : article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
                         </tr>
                       )

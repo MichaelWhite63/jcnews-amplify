@@ -247,6 +247,10 @@
   padding: 0.25rem 1rem;
 }
 
+.interest-table .ticker-cell {
+  white-space: nowrap;
+}
+
 .trade-date-separator td {
   padding: 4px 12px;
   background: transparent;
