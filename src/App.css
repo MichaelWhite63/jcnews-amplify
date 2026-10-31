@@ -976,3 +976,71 @@
   color: var(--text-primary);
   font-size: 0.82rem;
 }
+
+/* ── Dow Jones story chain / fixed-width ─────────────────────────────────── */
+.dj-fixed {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: pre;          /* keep spacing, never wrap */
+  overflow-x: auto;          /* scroll sideways on narrow screens */
+  max-width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+/* Keep a wide <pre> from stretching the table: the detail cell takes the width of the other rows. */
+.accordion-detail-row > td {
+  max-width: 0;
+}
+
+.dj-chain {
+  position: relative;
+  max-height: 60vh;
+}
+
+.dj-take {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.dj-take--selected {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+}
+
+.dj-take-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.dj-take-headline {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.dj-marker {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 3px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+}
+
+.dj-marker--hot       { background: var(--red);    color: #fff; }
+.dj-marker--corrected { background: var(--yellow); color: #111; }

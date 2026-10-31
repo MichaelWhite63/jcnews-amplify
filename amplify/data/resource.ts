@@ -66,6 +66,15 @@ const schema = a.schema({
     importance: a.string(),
     category: a.string(),
     screen: a.string(),
+    // Dow Jones story chaining (null/absent on non-DJ rows)
+    djAccessionNumber: a.string(),
+    djSeq:             a.integer(),
+    djTakeId:          a.string(),
+    djHot:             a.boolean(),
+    djCorrected:       a.boolean(),
+    djTemp:            a.boolean(),
+    djDisplayTime:     a.datetime(),
+    djCodes:           a.string(),
   }),
 
   Security: a.customType({
@@ -144,6 +153,20 @@ const schema = a.schema({
       a.handler.function(newsQuery)
     ),
 
+  // All takes of one Dow Jones story (one row per take, deduped across tickers), oldest first.
+  getStoryTakes: a
+    .query()
+    .arguments({
+      accessionNumber: a.string().required(),
+      // Any take id of the story ("docdate:product:seq"). Accession numbers are only unique within a
+      // Dow Jones product (an SN and a DN story can share one), so the chain is limited to its product.
+      takeId:          a.string(),
+      allowedSources:  a.string().array(),
+    })
+    .returns(a.ref('NewsArticle').array())
+    .authorization((allow) => [allow.guest(), allow.custom()])
+    .handler(a.handler.function(newsQuery)),
+
   getCompaniesByIndustry: a
     .query()
     .arguments({
@@ -187,6 +210,14 @@ const schema = a.schema({
       category:      a.string(),
       publishedDate: a.datetime(),
       screen:        a.string(),
+      djAccessionNumber: a.string(),
+      djSeq:             a.integer(),
+      djTakeId:          a.string(),
+      djHot:             a.boolean(),
+      djCorrected:       a.boolean(),
+      djTemp:            a.boolean(),
+      djDisplayTime:     a.datetime(),
+      djCodes:           a.string(),
     })
     .returns(a.ref('NewsArticle'))
     .authorization((allow) => [allow.guest()])
