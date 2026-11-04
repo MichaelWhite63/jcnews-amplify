@@ -756,12 +756,13 @@ function App() {
                       <th>Ticker</th>
                       <th>Headline</th>
                       <th>Importance</th>
+                      <th>Category</th>
                     </tr>
                   </thead>
                   <tbody>
                     {interestFeed.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={5} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No activity yet this session.
                           {interestTickers.length === 0
                             ? ' Waiting for ticker-of-interest events…'
@@ -789,12 +790,13 @@ function App() {
                           <td className="importance-cell">
                             {article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
+                          <td className="category-cell">{article.category || '-'}</td>
                         </tr>
                       )]
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={4}>
+                            <td colSpan={5}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
@@ -973,6 +975,7 @@ function App() {
                         )}
                       </div>
                     </th>
+                    {data.security?.ticker !== 'ZXYZ US' && <th>Category</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -999,7 +1002,7 @@ function App() {
                         separatorInserted = true
                         rows.push(
                           <tr key="separator" className="trade-date-separator">
-                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
+                            <td colSpan={4}>
                               <span>Before 4PM {cutoff.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                             </td>
                           </tr>
@@ -1044,12 +1047,13 @@ function App() {
                                 : '-'
                             ) : article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
+                          {data.security?.ticker !== 'ZXYZ US' && <td className="category-cell">{article.category || '-'}</td>}
                         </tr>
                       )
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
+                            <td colSpan={4}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
