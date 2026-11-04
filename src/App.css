@@ -331,9 +331,14 @@
   margin-bottom: 0.75rem;
 }
 
+.accordion-detail-text,
+.accordion-detail-text span,
+.accordion-detail-text pre {
+  font-weight: 700;   /* article bodies: every renderer (plain, fixed-width, story chain) */
+}
+
 .accordion-detail-text {
   font-size: 0.875rem;
-  font-weight: 700;
   color: var(--text-secondary);
   line-height: 1.65;
   max-height: 300px;
@@ -989,6 +994,7 @@
 
 /* ── Dow Jones story chain / fixed-width ─────────────────────────────────── */
 .dj-fixed {
+  font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -1037,7 +1043,7 @@
 }
 
 .dj-take-headline {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
