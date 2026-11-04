@@ -302,12 +302,12 @@
 
 .accordion-chevron {
   display: inline-block;
-  width: 2.5rem;
-  font-size: 2.2rem;
+  width: 1rem;
+  font-size: 0.875rem;   /* was 2.2rem: the oversized glyph set the row height */
   color: var(--accent);
   margin-right: 0.35rem;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 1.45;     /* matches .headline-cell so the glyph adds no height */
 }
 
 .accordion-detail-row td {
@@ -424,6 +424,13 @@
   width: 8%;
   text-align: center;
 }
+
+/* TODO: testing only — headline colored like its importance badge (see COLOR_HEADLINE_BY_IMPORTANCE in App.tsx) */
+.headline-cell.headline-importance-high { color: #f87171; }
+.headline-cell.headline-importance-mid  { color: #fbbf24; }
+.headline-cell.headline-importance-low  { color: var(--accent-hover); }
+
+.date-time { font-weight: 700; }
 
 .importance-badge {
   display: inline-flex;

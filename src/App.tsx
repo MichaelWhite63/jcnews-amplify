@@ -74,6 +74,23 @@ function importanceBadge(importance: string) {
   return <span className={`importance-badge ${cls}`}>{label}</span>
 }
 
+// TODO: testing only — colors the headline to match its importance badge. Set to false (or delete this
+// constant, headlineImportanceClass and the .headline-importance-* rules in App.css) to remove.
+const COLOR_HEADLINE_BY_IMPORTANCE = true
+
+function headlineImportanceClass(importance: string): string {
+  if (!COLOR_HEADLINE_BY_IMPORTANCE || !importance) return ''
+  const n = Number(importance)
+  return n <= 3 ? ' headline-importance-high' : n <= 6 ? ' headline-importance-mid' : ' headline-importance-low'
+}
+
+// "Nov 4, 05:00 AM ET" -> date part normal weight, time part bold.
+function DateTime({ text }: { text: string }) {
+  const i = text.lastIndexOf(', ')
+  if (i < 0) return <>{text}</>
+  return <>{text.slice(0, i + 2)}<strong className="date-time">{text.slice(i + 2)}</strong></>
+}
+
 function App() {
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
@@ -758,9 +775,9 @@ function App() {
                           onClick={() => hasDetail && setSelectedInterestArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
+                          <td className="date-cell"><DateTime text={rowTime(article, formatDateNoYear)} /></td>
                           <td className="ticker-cell">{displayTicker(article.ticker)}</td>
-                          <td className="headline-cell">
+                          <td className={`headline-cell${headlineImportanceClass(article.importance)}`}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                             <DjMarkers a={article} />
@@ -852,7 +869,7 @@ function App() {
                         )}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
+                        <td className="date-cell"><DateTime text={formatDateNoYear(article.publishedDate)} /></td>
                         <td className="headline-cell">
                           <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
                           {article.headline}
@@ -996,8 +1013,8 @@ function App() {
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
-                          <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
+                          <td className="date-cell"><DateTime text={rowTime(article, formatDateNoYear)} /></td>
+                          <td className={`headline-cell${headlineImportanceClass(article.importance)}`} style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                             <DjMarkers a={article} />
