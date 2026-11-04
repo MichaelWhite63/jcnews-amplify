@@ -234,7 +234,7 @@
 }
 
 .news-table td {
-  padding: 0.875rem 1rem;
+  padding: 0.25rem 1rem;   /* was 0.875rem: with the oversized chevron this made rows ~2 lines tall */
   vertical-align: middle;
   border-right: 1px solid var(--border);
 }
@@ -430,7 +430,7 @@
 .headline-cell.headline-importance-mid  { color: #fbbf24; }
 .headline-cell.headline-importance-low  { color: var(--accent-hover); }
 
-.date-time { font-weight: 700; }
+.date-time { font-weight: 700; color: var(--text-primary); }
 
 .importance-badge {
   display: inline-flex;
