@@ -333,6 +333,7 @@
 
 .accordion-detail-text {
   font-size: 0.875rem;
+  font-weight: 700;
   color: var(--text-secondary);
   line-height: 1.65;
   max-height: 300px;
