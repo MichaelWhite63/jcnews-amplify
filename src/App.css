@@ -302,12 +302,14 @@
 
 .accordion-chevron {
   display: inline-block;
-  width: 1rem;
-  font-size: 0.875rem;   /* was 2.2rem: the oversized glyph set the row height */
+  width: 1.5rem;
+  font-size: 1.5rem;     /* big glyph, but the 1.25rem line box below keeps it from growing the row (was 2.2rem / line-height 1) */
   color: var(--accent);
   margin-right: 0.35rem;
   flex-shrink: 0;
-  line-height: 1.45;     /* matches .headline-cell so the glyph adds no height */
+  line-height: 1.25rem;
+  height: 1.25rem;
+  text-align: center;
 }
 
 .accordion-detail-row td {
