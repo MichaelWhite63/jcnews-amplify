@@ -91,6 +91,10 @@ function DateTime({ text }: { text: string }) {
   return <>{text.slice(0, i + 2)}<strong className="date-time">{text.slice(i + 2)}</strong></>
 }
 
+// Newest first by the time the row actually displays (dj_display_time when set, else publishedDate).
+const byShownTimeDesc = (a: NewsArticle, b: NewsArticle) =>
+  new Date(displayTimeOf(b)).getTime() - new Date(displayTimeOf(a)).getTime()
+
 function App() {
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
@@ -764,7 +768,7 @@ function App() {
                             : ` Watching: ${interestTickers.map(displayTicker).join(', ')}`}
                         </td>
                       </tr>
-                    ) : interestFeed.flatMap((article) => {
+                    ) : [...interestFeed].sort(byShownTimeDesc).flatMap((article) => {
                       const isExpanded = selectedInterestArticle?.id === article.id
                       const articleText = article.article || article.summary || ''
                       const hasDetail = articleText.length > 0
@@ -976,7 +980,7 @@ function App() {
                     const cutoff = getPrevTradeDateCutoff()
                     let separatorInserted = false
                     const sorted = [...data.newsArticles]
-                      .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())
+                      .sort(byShownTimeDesc)
                       .filter(article => {
                         if (data.security?.ticker === 'ZXYZ US') {
                           if (zxyzTypeFilter !== 'Both' && article.category !== zxyzTypeFilter) return false
