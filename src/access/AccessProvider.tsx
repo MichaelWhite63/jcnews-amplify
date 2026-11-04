@@ -17,6 +17,24 @@ export interface AccessContextValue {
 // guest mode (for testing against the local dev-server, whose JWTs the deployed authorizer rejects).
 const DEV_DATA_IAM = import.meta.env.DEV && import.meta.env.VITE_ACCESS_DATA_AUTH === 'iam'
 
+// LOCAL REVIEW ONLY: `VITE_ACCESS_DEV_BYPASS=1 npm run dev` skips the link/exchange flow and renders with a fake
+// session read through the legacy guest mode. Needs vite dev (import.meta.env.DEV, folded to `false` and
+// tree-shaken in production builds) AND a localhost/127.0.0.1 host. No token or secret is involved.
+const DEV_BYPASS =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ACCESS_DEV_BYPASS === '1' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const DEV_BYPASS_VALUE: AccessContextValue | null = DEV_BYPASS
+  ? {
+      email: import.meta.env.VITE_ACCESS_DEV_BYPASS_EMAIL || 'dev-review@localhost',
+      session: 'dev-bypass',
+      allowedSources: (import.meta.env.VITE_ACCESS_DEV_BYPASS_SOURCES || 'Unlicensed,DowJones,Dow Jones').split(','),
+      department: '',
+      signOut: () => {},
+      authOpts: () => ({ authMode: 'iam' as const }),
+    }
+  : null
+
 const AccessContext = createContext<AccessContextValue | null>(null)
 
 /** Components under <AccessProvider> only render once a verified session exists. */
@@ -40,6 +58,7 @@ function browserEnv(): Env {
 }
 
 export function AccessProvider({ children }: { children: ReactNode }) {
+  if (DEV_BYPASS_VALUE) return <AccessContext.Provider value={DEV_BYPASS_VALUE}>{children}</AccessContext.Provider>
   const controller = useMemo(() => new AccessController(browserEnv()), [])
   const state = useSyncExternalStore(controller.subscribe.bind(controller), controller.getState)
   const [started, setStarted] = useState(false)

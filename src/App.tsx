@@ -74,6 +74,27 @@ function importanceBadge(importance: string) {
   return <span className={`importance-badge ${cls}`}>{label}</span>
 }
 
+// TODO: testing only — colors the headline to match its importance badge. Set to false (or delete this
+// constant, headlineImportanceClass and the .headline-importance-* rules in App.css) to remove.
+const COLOR_HEADLINE_BY_IMPORTANCE = true
+
+function headlineImportanceClass(importance: string): string {
+  if (!COLOR_HEADLINE_BY_IMPORTANCE || !importance) return ''
+  const n = Number(importance)
+  return n <= 3 ? ' headline-importance-high' : n <= 6 ? ' headline-importance-mid' : ' headline-importance-low'
+}
+
+// "Nov 4, 05:00 AM ET" -> date part normal weight, time part bold.
+function DateTime({ text }: { text: string }) {
+  const i = text.lastIndexOf(', ')
+  if (i < 0) return <>{text}</>
+  return <>{text.slice(0, i + 2)}<strong className="date-time">{text.slice(i + 2)}</strong></>
+}
+
+// Newest first by the time the row actually displays (dj_display_time when set, else publishedDate).
+const byShownTimeDesc = (a: NewsArticle, b: NewsArticle) =>
+  new Date(displayTimeOf(b)).getTime() - new Date(displayTimeOf(a)).getTime()
+
 function App() {
   const params = new URLSearchParams(window.location.search)
   const initialTicker = params.get('ticker') || 'AAPL US'
@@ -735,19 +756,20 @@ function App() {
                       <th>Ticker</th>
                       <th>Headline</th>
                       <th>Importance</th>
+                      <th>Category</th>
                     </tr>
                   </thead>
                   <tbody>
                     {interestFeed.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={5} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No activity yet this session.
                           {interestTickers.length === 0
                             ? ' Waiting for ticker-of-interest events…'
                             : ` Watching: ${interestTickers.map(displayTicker).join(', ')}`}
                         </td>
                       </tr>
-                    ) : interestFeed.flatMap((article) => {
+                    ) : [...interestFeed].sort(byShownTimeDesc).flatMap((article) => {
                       const isExpanded = selectedInterestArticle?.id === article.id
                       const articleText = article.article || article.summary || ''
                       const hasDetail = articleText.length > 0
@@ -758,9 +780,9 @@ function App() {
                           onClick={() => hasDetail && setSelectedInterestArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
+                          <td className="date-cell"><DateTime text={rowTime(article, formatDateNoYear)} /></td>
                           <td className="ticker-cell">{displayTicker(article.ticker)}</td>
-                          <td className="headline-cell">
+                          <td className={`headline-cell${headlineImportanceClass(article.importance)}`}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                             <DjMarkers a={article} />
@@ -768,12 +790,13 @@ function App() {
                           <td className="importance-cell">
                             {article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
+                          <td className="category-cell">{article.category || '-'}</td>
                         </tr>
                       )]
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={4}>
+                            <td colSpan={5}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">
@@ -852,7 +875,7 @@ function App() {
                         )}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td className="date-cell">{formatDateNoYear(article.publishedDate)}</td>
+                        <td className="date-cell"><DateTime text={formatDateNoYear(article.publishedDate)} /></td>
                         <td className="headline-cell">
                           <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>
                           {article.headline}
@@ -952,6 +975,7 @@ function App() {
                         )}
                       </div>
                     </th>
+                    {data.security?.ticker !== 'ZXYZ US' && <th>Category</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -959,7 +983,7 @@ function App() {
                     const cutoff = getPrevTradeDateCutoff()
                     let separatorInserted = false
                     const sorted = [...data.newsArticles]
-                      .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())
+                      .sort(byShownTimeDesc)
                       .filter(article => {
                         if (data.security?.ticker === 'ZXYZ US') {
                           if (zxyzTypeFilter !== 'Both' && article.category !== zxyzTypeFilter) return false
@@ -978,7 +1002,7 @@ function App() {
                         separatorInserted = true
                         rows.push(
                           <tr key="separator" className="trade-date-separator">
-                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
+                            <td colSpan={4}>
                               <span>Before 4PM {cutoff.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                             </td>
                           </tr>
@@ -996,8 +1020,8 @@ function App() {
                           onClick={() => hasDetail && setSelectedArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
-                          <td className="date-cell">{rowTime(article, formatDateNoYear)}</td>
-                          <td className="headline-cell" style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
+                          <td className="date-cell"><DateTime text={rowTime(article, formatDateNoYear)} /></td>
+                          <td className={`headline-cell${headlineImportanceClass(article.importance)}`} style={article.ticker === 'ZXYZ US' ? { whiteSpace: 'pre-line', borderRight: 'none' } : undefined}>
                             {hasDetail && <span className="accordion-chevron">{isExpanded ? '▾' : '▸'}</span>}
                             {article.headline}
                             <DjMarkers a={article} />
@@ -1023,12 +1047,13 @@ function App() {
                                 : '-'
                             ) : article.importance ? importanceBadge(article.importance) : '-'}
                           </td>
+                          {data.security?.ticker !== 'ZXYZ US' && <td className="category-cell">{article.category || '-'}</td>}
                         </tr>
                       )
                       if (isExpanded) {
                         rows.push(
                           <tr key={`${article.id}-detail`} className="accordion-detail-row">
-                            <td colSpan={data.security?.ticker === 'ZXYZ US' ? 4 : 3}>
+                            <td colSpan={4}>
                               <div className="accordion-detail">
                                 <div className="accordion-detail-header">
                                   <span className="article-summary-meta">

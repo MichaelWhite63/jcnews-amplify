@@ -234,7 +234,7 @@
 }
 
 .news-table td {
-  padding: 0.875rem 1rem;
+  padding: 0.25rem 1rem;   /* was 0.875rem: with the oversized chevron this made rows ~2 lines tall */
   vertical-align: middle;
   border-right: 1px solid var(--border);
 }
@@ -302,12 +302,14 @@
 
 .accordion-chevron {
   display: inline-block;
-  width: 2.5rem;
-  font-size: 2.2rem;
+  width: 1.5rem;
+  font-size: 1.5rem;     /* big glyph, but the 1.25rem line box below keeps it from growing the row (was 2.2rem / line-height 1) */
   color: var(--accent);
   margin-right: 0.35rem;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 1.25rem;
+  height: 1.25rem;
+  text-align: center;
 }
 
 .accordion-detail-row td {
@@ -327,6 +329,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.75rem;
+}
+
+.accordion-detail-text,
+.accordion-detail-text span,
+.accordion-detail-text pre {
+  font-weight: 700;   /* article bodies: every renderer (plain, fixed-width, story chain) */
 }
 
 .accordion-detail-text {
@@ -420,10 +428,23 @@
   width: 12%;
 }
 
+.category-cell {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .importance-cell {
   width: 8%;
   text-align: center;
 }
+
+/* TODO: testing only — headline colored like its importance badge (see COLOR_HEADLINE_BY_IMPORTANCE in App.tsx) */
+.headline-cell.headline-importance-high { color: #f87171; }
+.headline-cell.headline-importance-mid  { color: #fbbf24; }
+.headline-cell.headline-importance-low  { color: var(--accent-hover); }
+
+.date-time { font-weight: 700; color: var(--text-primary); }
 
 .importance-badge {
   display: inline-flex;
@@ -979,6 +1000,7 @@
 
 /* ── Dow Jones story chain / fixed-width ─────────────────────────────────── */
 .dj-fixed {
+  font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   font-size: 0.8125rem;
   line-height: 1.4;
@@ -1027,7 +1049,7 @@
 }
 
 .dj-take-headline {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
