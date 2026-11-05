@@ -8,8 +8,8 @@ export default function StoryBody({ text }: { text: string }) {
         seg.kind === 'pre' ? (
           <pre key={i} className="dj-fixed">{seg.text}</pre>
         ) : (
-          seg.text.split('\n').map((line, j) => (
-            <span key={`${i}-${j}`}>{line || ' '}<br /></span>
+          seg.text.split('\n').filter(line => line.trim()).map((line, j) => (
+            <p key={`${i}-${j}`} className="story-para">{line}</p>
           ))
         )
       )}

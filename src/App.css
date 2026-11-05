@@ -333,16 +333,29 @@
 
 .accordion-detail-text,
 .accordion-detail-text span,
+.accordion-detail-text .story-para,
 .accordion-detail-text pre {
-  font-weight: 700;   /* article bodies: every renderer (plain, fixed-width, story chain) */
+  font-weight: var(--story-weight, 700);   /* article bodies: every renderer (plain, fixed-width, story chain) */
+}
+
+/* One block per source line, with space between paragraphs. */
+.story-para {
+  margin: 0 0 0.8em;
 }
 
 .accordion-detail-text {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+  font-family: var(--story-font, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 1.0625rem;
+  color: var(--story-color-dark, #f0f2f8);
+  -webkit-font-smoothing: antialiased;
   line-height: 1.65;
+  margin: 0 3.5rem 0 2rem;
   max-height: 300px;
   overflow-y: auto;
+}
+
+:root.light .accordion-detail-text {
+  color: var(--story-color-light, #14161f);
 }
 
 .article-summary-meta {
