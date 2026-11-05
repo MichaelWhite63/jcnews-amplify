@@ -11,6 +11,11 @@ export function DjMarkers({ a }: { a: NewsArticle }) {
   )
 }
 
+/** 0 for a short story (<= SHORT chars) up to 1 for a long one (>= LONG chars). */
+const SHORT_CHARS = 1000
+const LONG_CHARS = 5000
+const lengthFactor = (chars: number) => Math.min(1, Math.max(0, (chars - SHORT_CHARS) / (LONG_CHARS - SHORT_CHARS)))
+
 interface Props {
   article: NewsArticle
   /** Fetch every take of a story (oldest first, any ticker's copy deduped). */
@@ -45,10 +50,13 @@ export default function StoryDetail({ article, loadChain }: Props) {
 
   const text = article.article || article.summary || ''
 
+  // Box height follows story length: today's height for a short story, up to twice that for a long one.
+  const singleStyle = { maxHeight: `${Math.round(300 * (1 + lengthFactor(text.length)))}px` }
+
   // Not a Dow Jones row, or its chain is not loaded (yet) / has only this take: single-take view.
   if (!accession || !chain || chain.length < 2) {
     return (
-      <div className="accordion-detail-text">
+      <div className="accordion-detail-text" style={singleStyle}>
         {accession && (article.djHot || article.djCorrected) ? (
           <div className="dj-take-head"><DjMarkers a={article} /></div>
         ) : null}
@@ -57,8 +65,10 @@ export default function StoryDetail({ article, loadChain }: Props) {
     )
   }
 
+  const chainChars = chain.reduce((n, t) => n + (t.article || t.summary || '').length, 0)
+  const chainVh = Math.min(90, 60 * (1 + lengthFactor(chainChars)))
   return (
-    <div className="accordion-detail-text dj-chain" ref={boxRef}>
+    <div className="accordion-detail-text dj-chain" ref={boxRef} style={{ maxHeight: `${chainVh}vh` }}>
       {chain.map((t, i) => {
         const selected = isSameTake(t, article)
         return (
