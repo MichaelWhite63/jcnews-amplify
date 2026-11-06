@@ -12,6 +12,7 @@ import { type DowJonesArticle } from './data/dowJonesData'
 import { useAccess } from './access/AccessProvider'
 import StoryDetail, { DjMarkers } from './StoryDetail'
 import { type NewsArticle, collapseToLatestTake, displayTimeOf, formatET, pickDj } from './djStory'
+import { isNewArticle, NEW_ARTICLE_TICK_MS } from './newArticle'
 import './App.css'
 import './access/access.css'
 
@@ -128,7 +129,12 @@ function App() {
   const interestTickersRef = useRef<string[]>([])
   const [macroArticles, setMacroArticles] = useState<DowJonesArticle[]>([])
   const [macroLoading, setMacroLoading] = useState(false)
-  const [newArticleIds, setNewArticleIds] = useState<Set<number>>(new Set())
+  // Re-evaluated on a timer so the "new article" highlight clears without new data arriving.
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), NEW_ARTICLE_TICK_MS)
+    return () => clearInterval(id)
+  }, [])
   const [importanceFilter, setImportanceFilter] = useState<string>('All')
   const [zxyzTypeFilter, setZxyzTypeFilter] = useState<string>('Both')
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
@@ -144,7 +150,6 @@ function App() {
   const articleWindowRef = useRef<Window | null>(null)
   const articleCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeScreenKeyRef = useRef<string>(initialTicker)
-  const pendingNewIdsRef = useRef<Record<string, number[]>>({})
 
   const openArticle = (url: string) => {
     if (articleCloseTimerRef.current) {
@@ -274,14 +279,7 @@ function App() {
                 industry:      '',
                 source:        (article.screen + '_news') as DowJonesArticle['source'],
               }, ...prev])
-              markArticleNew(newId)
             } else {
-              // Store the ID so we can highlight it when the user switches to this screen
-              const pendingId = article.id ?? Date.now()
-              pendingNewIdsRef.current[article.screen] = [
-                ...(pendingNewIdsRef.current[article.screen] ?? []),
-                pendingId,
-              ]
               setUnreadScreens(prev => ({ ...prev, [article.screen]: true }))
             }
             return
@@ -308,14 +306,7 @@ function App() {
               }
               return { ...prev, newsArticles: collapseToLatestTake([newArticle, ...(prev.newsArticles ?? [])]) }
             })
-            markArticleNew(newId)
           } else {
-            // Store the ID so we can highlight it when the user switches to this ticker
-            const pendingId = article.id ?? Date.now()
-            pendingNewIdsRef.current[key] = [
-              ...(pendingNewIdsRef.current[key] ?? []),
-              pendingId,
-            ]
             setUnreadScreens(prev => ({ ...prev, [key]: true }))
           }
         },
@@ -404,17 +395,6 @@ function App() {
     setUnreadScreens(prev => prev[key] ? { ...prev, [key]: false } : prev)
   }
 
-  const markArticleNew = (id: number) => {
-    setNewArticleIds(prev => new Set(prev).add(id))
-    setTimeout(() => {
-      setNewArticleIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    }, 30000)
-  }
-
   const screenFromView = (view: string) => view.replace('_news', '')
 
   const fetchMacroNews = async (view: string) => {
@@ -437,10 +417,6 @@ function App() {
         source:        view as DowJonesArticle['source'],
       }))
       setMacroArticles(articles)
-      // Highlight any articles that arrived via subscription while on another screen
-      const pending = pendingNewIdsRef.current[screen] ?? []
-      pending.forEach(id => markArticleNew(id))
-      delete pendingNewIdsRef.current[screen]
     } catch (err) {
       console.error('Error fetching macro news:', err)
       setMacroArticles([])
@@ -531,11 +507,6 @@ function App() {
 
       const tickerData = result as TickerNewsData
       setData(tickerData && { ...tickerData, newsArticles: collapseToLatestTake(tickerData.newsArticles ?? []) })
-
-      // Highlight any articles that arrived via subscription while on another screen
-      const pending = pendingNewIdsRef.current[tickerValue] ?? []
-      pending.forEach(id => markArticleNew(id))
-      delete pendingNewIdsRef.current[tickerValue]
 
       // Add to search history
       addToSearchHistory(tickerValue)
@@ -776,7 +747,7 @@ function App() {
                       const rows = [(
                         <tr
                           key={article.id}
-                          className={`article-row${isExpanded ? ' expanded' : ''}`}
+                          className={`article-row${isExpanded ? ' expanded' : ''}${isNewArticle(displayTimeOf(article), nowMs) ? ' article-row--new' : ''}`}
                           onClick={() => hasDetail && setSelectedInterestArticle(prev => prev?.id === article.id ? null : article)}
                           style={{ cursor: hasDetail ? 'pointer' : 'default' }}
                         >
@@ -865,7 +836,7 @@ function App() {
                   ) : null}
                   {!macroLoading && macroArticles.map((article: DowJonesArticle) => {
                     const isExpanded = selectedDjArticle?.id === article.id && selectedDjArticle?.source === article.source
-                    const isNew = newArticleIds.has(article.id)
+                    const isNew = isNewArticle(article.publishedDate, nowMs)
                     return [
                       <tr
                         key={article.id}
@@ -1012,7 +983,7 @@ function App() {
                       const articleText = article.article || article.summary || ''
                       const charCount = articleText.length
                       const hasDetail = charCount > 0
-                      const isNew = newArticleIds.has(article.id)
+                      const isNew = isNewArticle(displayTimeOf(article), nowMs)
                       rows.push(
                         <tr
                           key={article.id}

@@ -281,19 +281,22 @@
   background-color: var(--accent-dim) !important;
 }
 
-.article-row--new {
-  border-left: 3px solid #EF9F27;
-  animation: fadeNewHighlight 30s forwards;
+.news-table tbody tr.article-row {
+  /* Fades the "new" highlight out when the 2 minutes end (class is removed). */
+  transition: background-color 1s ease, background-image 1s ease, box-shadow 1s ease;
 }
 
-.article-row--new .headline-cell {
-  font-weight: 700;
+/* "New article" highlight (see NEW_ARTICLE_HIGHLIGHT_MS). An amber overlay painted via
+   background-image, so it layers over the zebra/hover/importance colors instead of replacing
+   them; the left bar is an inset shadow so it doesn't shift the layout. Expanded rows keep
+   their own accent background. */
+.news-table tbody tr.article-row--new {
+  background-image: linear-gradient(rgba(239, 159, 39, 0.16), rgba(239, 159, 39, 0.16));
+  box-shadow: inset 3px 0 0 #EF9F27;
 }
 
-@keyframes fadeNewHighlight {
-  0%   { background-color: rgba(239, 159, 39, 0.15); }
-  50%  { background-color: rgba(239, 159, 39, 0.08); }
-  100% { background-color: transparent; }
+.news-table tbody tr.article-row--new:hover {
+  background-image: linear-gradient(rgba(239, 159, 39, 0.24), rgba(239, 159, 39, 0.24));
 }
 
 .article-row.expanded .headline-cell {
